@@ -31,14 +31,14 @@ class AdvertisementAdmin(admin.ModelAdmin):
         'Reklama_nomi_uz', 'Reklama_nomi_ru', 'Ijarachi_uz', 'Ijarachi_ru',
         'get_station', 'Qurilma_turi_uz', 'Qurilma_turi_ru',
         'Shartnoma_raqami_uz', 'Shartnoma_raqami_ru',
-        'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi'
+        'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi','O_lchov_birligi_uz', 'O_lchov_birligi_ru',
+        'Qurilma_narxi', 'Egallagan_maydon', 'Shartnoma_summasi','Shartnoma_fayl',
     ]
     list_filter = [
-        'Qurilma_turi_uz', 'Qurilma_turi_ru',
-        'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi'
+        'Ijarachi_uz', 'Ijarachi_ru',
+        'Qurilma_turi_uz', 'Qurilma_turi_ru'
     ]
     search_fields = [
-        'Reklama_nomi_uz', 'Reklama_nomi_ru',
         'Ijarachi_uz', 'Ijarachi_ru',
         'Qurilma_turi_uz', 'Qurilma_turi_ru'
     ]
