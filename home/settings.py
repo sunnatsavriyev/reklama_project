@@ -149,6 +149,7 @@ JAZZMIN_SETTINGS = {
         "reklamaproject.Advertisement": "fas fa-bullhorn",
         "reklamaproject.Position": "fas fa-map-marker-alt",
         "reklamaproject.MetroLine": "fas fa-subway",
+        "reklamaproject.AdvertisementArchive": "fas fa-archive",
         "auth.User": "fas fa-user",
         "auth.Group": "fas fa-users-cog",
         "authtoken.Token": "fas fa-key",

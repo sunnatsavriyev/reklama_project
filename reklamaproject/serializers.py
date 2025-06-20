@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Advertisement, Station, MetroLine, Position
+from .models import Advertisement, Station, MetroLine, Position, AdvertisementArchive
 
 class MetroLineSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,7 +17,7 @@ class StationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Station
-        fields = ['id', 'name_uz', 'name_ru', 'line', 'line_name_uz', 'line_name_ru']
+        fields = ['id', 'name_uz', 'name_ru', 'line', 'line_name_uz', 'line_name_ru','schema_image']
 
     def get_line_name(self, obj):
         if obj.line:
@@ -42,3 +42,10 @@ class AdvertisementSerializer(serializers.ModelSerializer):
             'Shartnoma_fayl', 'photo', 'contact_number', 'created_at'
         ]
         read_only_fields = ['user']
+
+
+
+class AdvertisementArchiveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdvertisementArchive
+        fields = '__all__'
