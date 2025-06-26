@@ -1,2 +1,39 @@
-.envs
-env
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+
+# Django
+*.pyc
+*.pyo
+*.pyd
+*.db
+.env
+.env.*
+*.pot
+*.pyc
+db.sqlite3
+media/
+staticfiles/
+
+# VSCode yoki IDE fayllari
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Node.js (agar frontend bo‘lsa)
+node_modules/
+build/
+dist/
+
+# Docker
+*.pid
+*.tar
+docker-compose.override.yml
+
+# Git
+*.swp
+*.swo

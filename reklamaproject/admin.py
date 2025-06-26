@@ -58,10 +58,13 @@ class AdvertisementAdmin(admin.ModelAdmin):
         return "-"
 @admin.register(AdvertisementArchive)
 class AdvertisementArchiveAdmin(admin.ModelAdmin):
-    list_display = ['Reklama_nomi_uz', 'original_ad', 'Shartnoma_raqami_uz', 'user', 'created_at']
+    list_display = ['Reklama_nomi_uz',  'Ijarachi_uz', 
+        'Qurilma_turi_uz', 'Shartnoma_raqami_uz',
+        'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi','O_lchov_birligi_uz',
+        'Qurilma_narxi',  'Shartnoma_summasi','Shartnoma_fayl', 'user', 'created_at']
     search_fields = ['Reklama_nomi_uz', 'Shartnoma_raqami_uz']
     list_filter = ['created_at', 'user']
-    readonly_fields = [  # Arxiv faqat ko‘rish uchun bo‘lishi mumkin
+    readonly_fields = [  
         'original_ad', 'user', 'position', 'Reklama_nomi_uz', 'Reklama_nomi_ru',
         'Qurilma_turi_uz', 'Qurilma_turi_ru', 'Ijarachi_uz', 'Ijarachi_ru',
         'Shartnoma_raqami_uz', 'Shartnoma_raqami_ru',
@@ -72,10 +75,10 @@ class AdvertisementArchiveAdmin(admin.ModelAdmin):
     ]
 
     def has_add_permission(self, request):
-        return False  # qo‘shish kerak emas
+        return False  
 
     def has_change_permission(self, request, obj=None):
-        return False  # o‘zgartirish kerak emas
+        return False  
 
     def has_delete_permission(self, request, obj=None):
-        return False  # o‘chirish ham kerak emas
+        return False  

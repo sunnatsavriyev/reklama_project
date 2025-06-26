@@ -4,7 +4,20 @@ from .serializers import (
     MetroLineSerializer, StationSerializer,
     PositionSerializer, AdvertisementSerializer, AdvertisementArchiveSerializer
 )
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_me(request):
+    return Response({
+        "id": request.user.id,
+        "username": request.user.username,
+        "is_superuser": request.user.is_superuser,
+        "email": request.user.email,
+    })
 class AuthenticatedCRUDPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user and request.user.is_authenticated
@@ -18,16 +31,27 @@ class StationViewSet(viewsets.ModelViewSet):
     queryset = Station.objects.all()
     serializer_class = StationSerializer
     permission_classes = [AuthenticatedCRUDPermission]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['line']
+
 
 class PositionViewSet(viewsets.ModelViewSet):
     queryset = Position.objects.all()
     serializer_class = PositionSerializer
     permission_classes = [AuthenticatedCRUDPermission]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['station']
+
+    def get_queryset(self):
+        used_positions = Advertisement.objects.values_list('position_id', flat=True)
+        return Position.objects.exclude(id__in=used_positions)
 
 class AdvertisementViewSet(viewsets.ModelViewSet):
     queryset = Advertisement.objects.all()
     serializer_class = AdvertisementSerializer
     permission_classes = [AuthenticatedCRUDPermission]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['Reklama_nomi_uz', 'Shartnoma_raqami_uz']
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -64,7 +88,7 @@ class AdvertisementArchiveViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AdvertisementArchiveSerializer
     permission_classes = [AuthenticatedCRUDPermission]
 
-    # Filter va qidiruvni yoqamiz
+    
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['Reklama_nomi_uz', 'Shartnoma_raqami_uz']
     ordering_fields = ['created_at', 'Qurilma_narxi']

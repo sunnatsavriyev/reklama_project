@@ -6,10 +6,7 @@ class MetroLineSerializer(serializers.ModelSerializer):
         model = MetroLine
         fields = ['id', 'name_uz', 'name_ru']
 
-class PositionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Position
-        fields = ['id', 'station', 'number']
+
 
 class StationSerializer(serializers.ModelSerializer):
     line_name_uz = serializers.CharField(source='line.name_uz', read_only=True)
@@ -28,6 +25,10 @@ class AdvertisementSerializer(serializers.ModelSerializer):
     station = serializers.CharField(source='position.station.name_uz', read_only=True)
     position_number = serializers.IntegerField(source='position.number', read_only=True)
 
+
+    position = serializers.PrimaryKeyRelatedField(
+        queryset=Position.objects.filter(advertisement__isnull=True))
+
     class Meta:
         model = Advertisement
         fields = [
@@ -43,9 +44,14 @@ class AdvertisementSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['user']
 
-
+class PositionSerializer(serializers.ModelSerializer):
+    advertisement = AdvertisementSerializer(read_only=True)
+    class Meta:
+        model = Position
+        fields = ['id', 'station', 'number','advertisement']
 
 class AdvertisementArchiveSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(source='user.username', read_only=True)
     class Meta:
         model = AdvertisementArchive
         fields = '__all__'

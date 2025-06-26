@@ -1,0 +1,252 @@
+/* Orqa fon va umumiy font */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: url('./assets/Metro-station-in-Tashkent-Uzbekistan-1200x858.jpg') no-repeat center center fixed;
+  background-size: cover;
+  position: relative;
+}
+
+/* Qoraytirilgan fon */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 0;
+}
+
+/* Asosiy konteyner */
+.container {
+  position: relative;
+  z-index: 2;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 32px;
+}
+
+/* Sarlavha */
+.title {
+  font-size: 30px;
+  font-weight: bold;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+/* Navigatsiya */
+.nav {
+  display: flex;
+  justify-content: center; /* tugmalarni gorizontal o‘rtaga */
+  align-items: center;     /* vertikal o‘rtaga */
+  gap: 15px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  background-color: rgba(255, 255, 255, 0.15); /* oq rang, lekin shaffof */
+  padding: 10px 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.nav button {
+  background: rgba(0, 95, 153, 0.85); /* ko‘k rang, shaffof */
+  border: 1px solid rgba(0, 70, 110, 0.9);
+  color: #e0eefe;
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: none; /* blur olib tashlandi */
+}
+
+.nav button:hover {
+  background-color: rgba(0, 122, 204, 0.95);
+  color: #fff;
+  border-color: rgba(0, 95, 153, 1);
+}
+
+.lang-select {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-weight: 500;
+}
+/* Login form */
+.form {
+  max-width: 400px;
+  margin: 100px auto;
+  background-color: #fff;
+  padding: 28px;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 2;
+  position: relative;
+}
+
+.form input {
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.form button {
+  background-color: #006d77;
+  color: #fff;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.form button:hover {
+  background-color: #004b50;
+}
+
+/* Kartalar */
+.card-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.card-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.card-body {
+  padding: 18px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.card-sub {
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 4px;
+}
+
+/* Qidiruv va forma qismi */
+.search-bar, .input-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #aaa;
+}
+
+.search-bar button {
+  padding: 10px 20px;
+  background: #005f73;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.search-bar button:hover {
+  background: #003f4a;
+}
+
+/* Modal va qadamli forma uchun tayyorlik */
+.step-form {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+.line-button {
+  background: rgba(0, 128, 255, 0.2);
+  color: #fff;
+  border: 1px solid #fff;
+  padding: 12px 20px;
+  margin: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.line-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: #222;
+}
+
+
+
+.form-container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 30px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.form-title {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-grid input,
+.form-grid select {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.form-button {
+  padding: 12px;
+  background: #0088cc;
+  color: white;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.form-button:hover {
+  background: #0072aa;
+}

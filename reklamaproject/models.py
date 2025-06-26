@@ -33,7 +33,10 @@ class Position(models.Model):
     def __str__(self):
         return f"{self.station.name_uz} - Joy #{self.number}" if self.station else f"Joy #{self.number}"
 
-
+    class Meta:
+        unique_together = ('station', 'number')
+        verbose_name = "Pozitsiya"
+        verbose_name_plural = "Pozitsiyalar"
 class Advertisement(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ads')
     position = models.OneToOneField(Position, on_delete=models.CASCADE, related_name='advertisement', null=True, blank=True)

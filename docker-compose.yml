@@ -1,0 +1,32 @@
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    env_file:
+      - .envs/.env.db
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    command: gunicorn home.wsgi:application --bind 0.0.0.0:8020
+    volumes:
+      - .:/app
+      - ./media:/app/media
+      - ./staticfiles:/app/staticfiles
+    env_file:
+      - .envs/.env
+    ports:
+      - "8020:8020"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+  media_volume:
