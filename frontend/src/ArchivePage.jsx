@@ -1,10 +1,10 @@
-// src/ArchivePage.jsx
 import React, { useEffect, useState } from 'react';
 import axios from './axiosInstance';
 import './App.css';
 
 export default function ArchivePage() {
   const [ads, setAds] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     axios.get('advertisements-archive/')
@@ -12,14 +12,30 @@ export default function ArchivePage() {
       .catch(err => console.error('Arxivni olishda xatolik:', err));
   }, []);
 
+  const filteredAds = ads.filter(ad =>
+    ad.Reklama_nomi_uz?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ad.Ijarachi_uz?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div>
       <h2 className="title">Arxivlangan Reklamalar</h2>
+
+      <div className="search-bar">
+        <input
+          type="text"
+          placeholder="Reklama yoki ijarachi bo‘yicha qidiring..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <button onClick={() => setSearchTerm('')}>Tozalash</button>
+      </div>
+
       <div className="card-list">
-        {ads.length === 0 ? (
+        {filteredAds.length === 0 ? (
           <p>Arxivda hech qanday reklama topilmadi.</p>
         ) : (
-          ads.map(ad => (
+          filteredAds.map(ad => (
             <div className="card" key={ad.id}>
               {ad.photo && <img src={ad.photo} alt="reklama" className="card-img" />}
               <div className="card-body">
@@ -30,6 +46,9 @@ export default function ArchivePage() {
                 <p className="card-sub">Narxi: {ad.Qurilma_narxi} so‘m</p>
                 <p className="card-sub">Maydon: {ad.Egallagan_maydon} m²</p>
                 <p className="card-sub">Summasi: {ad.Shartnoma_summasi} so‘m</p>
+                <p className="card-username">
+                  Yangilagan: {ad.updated_by?.username || "Noma'lum"}
+                </p>
               </div>
             </div>
           ))

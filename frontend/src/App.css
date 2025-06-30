@@ -17,7 +17,7 @@ body::before {
   z-index: 0;
 }
 
-/* Asosiy konteyner */
+/* Asosiy konteyner (faqat kerakli joyda ishlatiladi) */
 .container {
   position: relative;
   z-index: 2;
@@ -35,24 +35,26 @@ body::before {
   color: #1a1a1a;
   margin-bottom: 24px;
   text-align: center;
+  z-index: 2;
+  position: relative;
 }
 
-/* Navigatsiya */
+/* Navigatsiya paneli */
 .nav {
   display: flex;
-  justify-content: center; /* tugmalarni gorizontal o‘rtaga */
-  align-items: center;     /* vertikal o‘rtaga */
+  justify-content: center;
+  align-items: center;
   gap: 15px;
   margin-bottom: 30px;
   flex-wrap: wrap;
-  background-color: rgba(255, 255, 255, 0.15); /* oq rang, lekin shaffof */
+  background-color: rgba(255, 255, 255, 0.15);
   padding: 10px 20px;
   border-radius: 12px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 .nav button {
-  background: rgba(0, 95, 153, 0.85); /* ko‘k rang, shaffof */
+  background: rgba(0, 95, 153, 0.85);
   border: 1px solid rgba(0, 70, 110, 0.9);
   color: #e0eefe;
   padding: 10px 20px;
@@ -60,7 +62,6 @@ body::before {
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: none; /* blur olib tashlandi */
 }
 
 .nav button:hover {
@@ -69,6 +70,7 @@ body::before {
   border-color: rgba(0, 95, 153, 1);
 }
 
+/* Til tanlash select */
 .lang-select {
   background: rgba(255, 255, 255, 0.2);
   color: white;
@@ -77,6 +79,7 @@ body::before {
   padding: 6px 10px;
   font-weight: 500;
 }
+
 /* Login form */
 .form {
   max-width: 400px;
@@ -92,7 +95,8 @@ body::before {
   position: relative;
 }
 
-.form input {
+.form input,
+.form select {
   padding: 12px;
   font-size: 16px;
   border: 1px solid #ccc;
@@ -107,19 +111,24 @@ body::before {
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 .form button:hover {
   background-color: #004b50;
 }
 
-/* Kartalar */
+/* Kartalar ro‘yxati */
 .card-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
+  z-index: 2;
+  position: relative;
+  padding: 20px;
 }
 
+/* Karta elementlari */
 .card {
   background-color: white;
   border-radius: 10px;
@@ -134,8 +143,11 @@ body::before {
 
 .card-img {
   width: 100%;
-  height: auto;
+  height: 180px;
+  object-fit: cover;
+  object-position: center;
   display: block;
+  border-bottom: 1px solid #eee;
 }
 
 .card-body {
@@ -154,15 +166,30 @@ body::before {
   margin-bottom: 4px;
 }
 
-/* Qidiruv va forma qismi */
-.search-bar, .input-group {
+.card-username {
+  font-size: 13px;
+  font-style: italic;
+  color: #666;
+  margin-top: 10px;
+  text-align: right;
+}
+
+/* Qidiruv paneli */
+.search-bar {
   display: flex;
+  justify-content: center;
   gap: 12px;
   margin-bottom: 24px;
+  z-index: 2;
+  position: relative;
+  flex-wrap: wrap;
+  padding: 0 16px;
 }
 
 .search-bar input {
   flex: 1;
+  min-width: 260px;
+  max-width: 400px;
   padding: 10px;
   font-size: 16px;
   border-radius: 6px;
@@ -182,31 +209,82 @@ body::before {
   background: #003f4a;
 }
 
-/* Modal va qadamli forma uchun tayyorlik */
+/* Step-form (modal va qadamlar uchun) */
 .step-form {
   padding: 16px;
   background: #f8f9fa;
   border-radius: 8px;
 }
-.line-button {
-  background: rgba(0, 128, 255, 0.2);
-  color: #fff;
-  border: 1px solid #fff;
-  padding: 12px 20px;
-  margin: 10px;
-  font-size: 16px;
-  border-radius: 8px;
+
+/* Tanlov uchun chiroyli select (Liniya, Bekat, Joy tanlash) */
+select {
+  padding: 16px 20px;
+  font-size: 17px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px 16px;
+  padding-right: 50px;
+}
+
+/* Fokus bo‘lsa chiroyli effekt */
+select:focus {
+  outline: none;
+  border-color: #0072aa;
+  box-shadow: 0 0 0 3px rgba(0, 114, 170, 0.15);
+}
+
+/* Select elementini joylash (istalgan konteyner uchun) */
+.select-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+/* Label (tanlov uchun sarlavha) */
+.select-wrapper label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+/* --- Joy tugmalari konteyneri --- */
+.position-buttons-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+/* --- Joy uchun ko‘k tugmalar --- */
+.position-button {
+  background-color: #0072aa;
+  color: white;
+  padding: 16px 28px;
+  font-size: 18px;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  min-width: 140px;
+  text-align: center;
 }
 
-.line-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  color: #222;
+.position-button:hover {
+  background-color: #005f8a;
+  transform: translateY(-2px);
 }
 
 
-
+/* Forma konteyneri */
 .form-container {
   max-width: 700px;
   margin: 0 auto;
@@ -228,14 +306,6 @@ body::before {
   gap: 12px;
 }
 
-.form-grid input,
-.form-grid select {
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
 .form-button {
   padding: 12px;
   background: #0088cc;
@@ -249,4 +319,163 @@ body::before {
 
 .form-button:hover {
   background: #0072aa;
+}
+
+.logo {
+  display: block;
+  margin: 0 auto 20px auto;
+  width: 80px;
+  height: auto;
+}
+
+
+/* Reklama qo‘shish sahifasi umumiy fon */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: url('./assets/Metro-station-in-Tashkent-Uzbekistan-1200x858.jpg') no-repeat center center fixed;
+  background-size: cover;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.55);
+  z-index: 0;
+}
+
+/* Forma konteyneri */
+.form-container {
+  position: relative;
+  z-index: 2;
+  max-width: 750px;
+  margin: 60px auto;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+/* Sarlavha */
+.form-title {
+  text-align: center;
+  font-size: 32px;
+  font-weight: bold;
+  color: #222;
+  margin-bottom: 30px;
+}
+
+/* Formaning o‘zi */
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Label */
+.form-grid label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+/* Input va select */
+.form-grid input,
+.form-grid select {
+  padding: 16px 18px;
+  font-size: 17px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+/* Select dropdown stili */
+.form-grid select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+  padding-right: 50px;
+}
+
+/* Fokus efekti */
+.form-grid input:focus,
+.form-grid select:focus {
+  border-color: #0072aa;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,114,170,0.15);
+}
+
+/* Yuborish tugmasi */
+.form-button {
+  padding: 16px;
+  font-size: 18px;
+  background: linear-gradient(135deg, #0072aa, #00aaff);
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.form-button:hover {
+  background: linear-gradient(135deg, #005f8c, #008ecc);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .form-container {
+    padding: 24px;
+    margin: 30px 12px;
+  }
+
+  .form-title {
+    font-size: 26px;
+  }
+}
+
+
+
+.back-button {
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: background-color 0.3s ease;
+  margin-bottom: 20px;
+}
+
+.back-button:hover {
+  background-color: #0056b3;
+}
+
+
+.card-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  object-position: center;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+
+.help-text {
+  font-size: 12px;
+  color: #888;
+  margin-top: -10px;
+  margin-bottom: 15px;
 }

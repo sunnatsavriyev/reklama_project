@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from './axiosInstance';
+import './App.css';
 
 export default function StationPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+
   const [station, setStation] = useState(null);
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showPositions, setShowPositions] = useState(false);
 
   useEffect(() => {
     const fetchStationAndPositions = async () => {
@@ -29,85 +33,81 @@ export default function StationPage() {
   if (loading) return <p>Yuklanmoqda...</p>;
   if (!station) return <p>Bekat topilmadi</p>;
 
-  // Faqat reklamasi bor joylar
   const advertisedPositions = positions.filter(pos => pos.advertisement);
 
   return (
-    <div className="container" style={{ display: 'flex', gap: '40px' }}>
-      {/* Sxema rasmi chapda */}
-      <div style={{ flex: '1' }}>
-        <h2 className="title">{station.name_uz} bekati</h2>
-        {station.schema_image && (
-          <img
-            src={station.schema_image}
-            alt="Sxema"
-            style={{
-              maxWidth: '600px',
-              maxHeight: '400px',
-              width: '100%',
-              objectFit: 'contain',
-              borderRadius: '10px',
-              boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-            }}
-          />
-        )}
+    <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+      
+      {/* --- LINIYA QO‘SHISH TUGMASI --- */}
+      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <button className="form-button" onClick={() => navigate('/add-line')}>
+          ➕ Liniya qo‘shish
+        </button>
       </div>
 
-      {/* Reklama ma'lumotlari o‘ng tomonda */}
-      <div style={{ flex: '1' }}>
-        <h3>Reklamali joylar</h3>
-        {advertisedPositions.length === 0 ? (
-          <p>Reklamali joy mavjud emas</p>
-        ) : (
-          advertisedPositions.map(pos => {
-            const ad = pos.advertisement;
-            return (
-              <div
-                key={pos.id}
-                className="card"
-                style={{
-                  marginBottom: '20px',
-                  padding: '15px',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-                }}
-              >
-                {ad.photo && (
-                  <img
-                    src={ad.photo}
-                    alt="Reklama rasmi"
-                    style={{
-                      maxWidth: '150px',
-                      maxHeight: '100px',
-                      objectFit: 'cover',
-                      borderRadius: '5px',
-                      marginBottom: '10px',
-                    }}
-                  />
-                )}
+      <div style={{ display: 'flex', gap: '40px' }}>
+        {/* --- SXEMA RASMI VA BEKAT QO‘SHISH --- */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 className="title">{station.name_uz} bekati</h2>
+            <button className="form-button" onClick={() => navigate('/add-station')}>
+              ➕ Bekat qo‘shish
+            </button>
+          </div>
 
-                <h4>{ad.Reklama_nomi_uz}</h4>
-                <p><strong>Joy raqami:</strong> {pos.number}</p>
-                <p><strong>Shartnoma raqami:</strong> {ad.Shartnoma_raqami_uz}</p>
-                <p><strong>Muddati:</strong> {ad.Shartnoma_muddati_boshlanishi} — {ad.Shartnoma_tugashi}</p>
-                <p><strong>Narxi:</strong> {ad.Qurilma_narxi} so‘m</p>
-                <p><strong>Maydon:</strong> {ad.Egallagan_maydon} m²</p>
-                <p><strong>Ijarachi:</strong> {ad.Ijarachi_uz}</p>
-                <p><strong>Qurilma turi:</strong> {ad.Qurilma_turi_uz}</p>
-                <p><strong>Aloqa:</strong> {ad.contact_number}</p>
-                <p><strong>O‘lchov birligi:</strong> {ad.O_lchov_birligi_uz}</p>
-                {ad.Shartnoma_fayl && (
-                  <p>
-                    <a href={ad.Shartnoma_fayl} target="_blank" rel="noopener noreferrer">
-                      📄 Shartnoma faylini ko‘rish
-                    </a>
-                  </p>
-                )}
-              </div>
-            );
-          })
-        )}
+          {station.schema_image && (
+            <img
+              src={station.schema_image}
+              alt="Sxema"
+              style={{
+                maxWidth: '600px',
+                maxHeight: '400px',
+                width: '100%',
+                objectFit: 'contain',
+                borderRadius: '10px',
+                boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+              }}
+            />
+          )}
+        </div>
+
+        {/* --- JOYLAR PANELI VA JOY QO‘SHISH --- */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3>Reklamali joylar</h3>
+            <button className="form-button" onClick={() => navigate('/add-position')}>
+              ➕ Joy qo‘shish
+            </button>
+          </div>
+
+          {advertisedPositions.length === 0 ? (
+            <p>Reklamali joy mavjud emas</p>
+          ) : (
+            <div>
+              <button
+                className="form-button"
+                onClick={() => setShowPositions(!showPositions)}
+                style={{ marginBottom: '15px', width: '100%' }}
+              >
+                {showPositions ? 'Joylarni yashirish' : 'Joylarni ko‘rish'}
+              </button>
+
+              {showPositions && (
+                <div className="position-buttons-container">
+                  {advertisedPositions.map(pos => (
+                    <button
+                      key={pos.id}
+                      className="position-button"
+                      onClick={() => navigate(`/joy/${pos.id}`)}
+                    >
+                      Joy #{pos.number}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ __pycache__/
 db.sqlite3
 media/
 staticfiles/
-
+env
 # VSCode yoki IDE fayllari
 .vscode/
 .idea/

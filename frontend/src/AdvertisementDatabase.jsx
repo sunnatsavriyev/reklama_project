@@ -50,7 +50,6 @@ export default function AdvertisementDatabase() {
                   src={ad.photo}
                   alt="Reklama rasmi"
                   className="card-img"
-                  style={{ maxWidth: '150px', maxHeight: '100px', objectFit: 'cover', borderRadius: '5px' }}
                 />
               )}
 

@@ -1,13 +1,16 @@
-// App.jsx
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import Login from './Login';
 import StepForm from './StepForm';
 import ArchivePage from './ArchivePage';
 import AdvertisementDatabase from './AdvertisementDatabase';
-import './App.css';
-import StationPage from './StationPage';  
+import StationPage from './StationPage';
 import AdvertisementAddPage from './AdvertisementAddpage';
+import JoyDetail from './JoyDetail';
+import './App.css';
+import AddStationForm from './AddStationForm';
+import AddPositionForm from './AddPositionForm';
+import AddLineForm from './AddLineForm';
 
 function Navbar({ onLogout }) {
   return (
@@ -20,7 +23,7 @@ function Navbar({ onLogout }) {
   );
 }
 
-function AppContent({ onLogout }) {
+function AppContent() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/form" />} />
@@ -29,6 +32,10 @@ function AppContent({ onLogout }) {
       <Route path="/archive" element={<ArchivePage />} />
       <Route path="/station/:id" element={<StationPage />} />
       <Route path="/add-ad" element={<AdvertisementAddPage />} />
+      <Route path="/joy/:id" element={<JoyDetail />} />
+      <Route path="/add-line" element={<AddLineForm />} />
+      <Route path="/add-station" element={<AddStationForm />} />
+      <Route path="/add-position" element={<AddPositionForm />} />
 
     </Routes>
   );

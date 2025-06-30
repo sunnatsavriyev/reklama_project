@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from .validators import validate_file_extension
+import logging
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -76,8 +78,10 @@ class Advertisement(models.Model):
     
 
 class AdvertisementArchive(models.Model):
-    original_ad = models.ForeignKey('Advertisement', on_delete=models.CASCADE, related_name='archives')
+    original_ad = models.ForeignKey('Advertisement', on_delete=models.SET_NULL, null=True, related_name='archives')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    line = models.ForeignKey('MetroLine', on_delete=models.SET_NULL, null=True, blank=True)
+    station = models.ForeignKey('Station', on_delete=models.SET_NULL, null=True, blank=True)
     position = models.ForeignKey(Position, on_delete=models.SET_NULL, null=True, blank=True)
     Reklama_nomi_uz = models.CharField(max_length=255)
     Reklama_nomi_ru = models.CharField(max_length=255)
