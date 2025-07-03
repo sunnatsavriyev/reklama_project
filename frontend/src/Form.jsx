@@ -14,9 +14,12 @@ export default function AdvertisementForm() {
     Shartnoma_summasi: '',
     contact_number: '+998',
     position: '',
+    O_lchov_birligi_uz: '',
+    O_lchov_birligi_ru: ''
   });
 
   const [photo, setPhoto] = useState(null);
+  const [contractFile, setContractFile] = useState(null);
   const [ads, setAds] = useState([]);
 
   const [lines, setLines] = useState([]);
@@ -62,21 +65,29 @@ export default function AdvertisementForm() {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e) => {
+  const handlePhotoChange = (e) => {
     setPhoto(e.target.files[0]);
+  };
+
+  const handleContractChange = (e) => {
+    setContractFile(e.target.files[0]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const data = new FormData();
-    Object.entries(form).forEach(([key, value]) => data.append(key, value));
+    Object.entries(form).forEach(([key, value]) => {
+      if (value !== '') data.append(key, value);
+    });
+
     if (photo) data.append('photo', photo);
+    if (contractFile) data.append('Shartnoma_fayl', contractFile);
 
     try {
-      await axios.post('advertisements/', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      alert('Reklama muvaffaqiyatli qo‘shildi');
+      await axios.post('advertisements/', data);
+      alert('✅ Reklama muvaffaqiyatli qo‘shildi');
+
       setForm({
         Reklama_nomi_uz: '',
         Reklama_nomi_ru: '',
@@ -89,12 +100,16 @@ export default function AdvertisementForm() {
         Shartnoma_summasi: '',
         contact_number: '+998',
         position: '',
+        O_lchov_birligi_uz: '',
+        O_lchov_birligi_ru: ''
       });
       setPhoto(null);
+      setContractFile(null);
+
       const res = await axios.get('advertisements/');
       setAds(res.data);
     } catch (err) {
-      alert('Xatolik yuz berdi');
+      alert('❌ Xatolik yuz berdi');
       console.error(err.response?.data || err.message);
     }
   };
@@ -136,7 +151,26 @@ export default function AdvertisementForm() {
         <input type="number" name="Shartnoma_summasi" placeholder="Shartnoma summasi" value={form.Shartnoma_summasi} onChange={handleChange} />
         <input name="contact_number" placeholder="Aloqa raqami" value={form.contact_number} onChange={handleChange} />
 
-        <input type="file" onChange={handleFileChange} />
+        <label>O‘lchov birligi:</label>                   
+        <select name="O_lchov_birligi_uz" value={form.O_lchov_birligi_uz} onChange={handleChange} required>
+          <option value="">O‘lchov birligini tanlang (uz)</option>
+          <option value="dona">Dona</option>
+          <option value="kv_metr">Kv metr</option>
+          <option value="komplekt">Komplekt</option>
+        </select>
+
+        <select name="O_lchov_birligi_ru" value={form.O_lchov_birligi_ru} onChange={handleChange} required>
+          <option value="">O‘lchov birligini tanlang (ru)</option>
+          <option value="штука">Штука</option>
+          <option value="кв. метр">Кв. метр</option>
+          <option value="комплект">Комплект</option>
+        </select>
+
+        <label>Shartnoma fayl:</label>
+        <input type="file" onChange={handleContractChange} />
+        <label>Rasm yuklang:</label>
+        <input type="file" onChange={handlePhotoChange} />
+
         <button type="submit">Yuborish</button>
       </form>
     </div>

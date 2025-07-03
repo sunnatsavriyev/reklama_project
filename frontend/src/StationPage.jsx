@@ -38,76 +38,70 @@ export default function StationPage() {
   return (
     <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
       
-      {/* --- LINIYA QO‘SHISH TUGMASI --- */}
-      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-        <button className="form-button" onClick={() => navigate('/add-line')}>
-          ➕ Liniya qo‘shish
-        </button>
+      {/* === STANSIYA NOMI + 3ta TUGMA BIRGA === */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <h2 className="title" style={{ margin: 0 }}>{station.name_uz} bekati</h2>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="form-button" onClick={() => navigate('/add-line')}>
+            ➕ Liniya qo‘shish
+          </button>
+          <button className="form-button" onClick={() => navigate('/add-station')}>
+            ➕ Bekat qo‘shish
+          </button>
+          <button className="form-button" onClick={() => navigate('/add-position')}>
+            ➕ Joy qo‘shish
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '40px' }}>
-        {/* --- SXEMA RASMI VA BEKAT QO‘SHISH --- */}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className="title">{station.name_uz} bekati</h2>
-            <button className="form-button" onClick={() => navigate('/add-station')}>
-              ➕ Bekat qo‘shish
+      {/* === SXEMA RASMI === */}
+      {station.schema_image && (
+        <img
+          src={station.schema_image}
+          alt="Sxema"
+          style={{
+            maxWidth: '600px',
+            maxHeight: '400px',
+            width: '100%',
+            objectFit: 'contain',
+            borderRadius: '10px',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+            marginTop: '20px',
+          }}
+        />
+      )}
+
+      {/* === JOYLAR VA REKLAMA RO‘YXATI === */}
+      <div style={{ flex: 1 }}>
+        <h3>Reklamali joylar</h3>
+
+        {advertisedPositions.length === 0 ? (
+          <p>Reklamali joy mavjud emas</p>
+        ) : (
+          <div>
+            <button
+              className="form-button"
+              onClick={() => setShowPositions(!showPositions)}
+              style={{ marginBottom: '15px', width: '100%' }}
+            >
+              {showPositions ? 'Joylarni yashirish' : 'Joylarni ko‘rish'}
             </button>
+
+            {showPositions && (
+              <div className="position-buttons-container">
+                {advertisedPositions.map(pos => (
+                  <button
+                    key={pos.id}
+                    className="position-button"
+                    onClick={() => navigate(`/joy/${pos.id}`)}
+                  >
+                    Joy #{pos.number}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-
-          {station.schema_image && (
-            <img
-              src={station.schema_image}
-              alt="Sxema"
-              style={{
-                maxWidth: '600px',
-                maxHeight: '400px',
-                width: '100%',
-                objectFit: 'contain',
-                borderRadius: '10px',
-                boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-              }}
-            />
-          )}
-        </div>
-
-        {/* --- JOYLAR PANELI VA JOY QO‘SHISH --- */}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3>Reklamali joylar</h3>
-            <button className="form-button" onClick={() => navigate('/add-position')}>
-              ➕ Joy qo‘shish
-            </button>
-          </div>
-
-          {advertisedPositions.length === 0 ? (
-            <p>Reklamali joy mavjud emas</p>
-          ) : (
-            <div>
-              <button
-                className="form-button"
-                onClick={() => setShowPositions(!showPositions)}
-                style={{ marginBottom: '15px', width: '100%' }}
-              >
-                {showPositions ? 'Joylarni yashirish' : 'Joylarni ko‘rish'}
-              </button>
-
-              {showPositions && (
-                <div className="position-buttons-container">
-                  {advertisedPositions.map(pos => (
-                    <button
-                      key={pos.id}
-                      className="position-button"
-                      onClick={() => navigate(`/joy/${pos.id}`)}
-                    >
-                      Joy #{pos.number}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

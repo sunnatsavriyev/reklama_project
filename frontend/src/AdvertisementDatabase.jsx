@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from './axiosInstance';
 import './App.css';
 import { useNavigate } from 'react-router-dom'; 
+
 export default function AdvertisementDatabase() {
   const [ads, setAds] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,11 +25,18 @@ export default function AdvertisementDatabase() {
 
       <button
         onClick={() => navigate('/add-ad')}
-        style={{ marginBottom: '20px', padding: '10px 20px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '5px' }}
+        style={{
+          marginBottom: '20px',
+          padding: '10px 20px',
+          background: '#007bff',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '5px'
+        }}
       >
         ➕ Reklama qo‘shish
       </button>
-      
+
       <input
         className="form-input"
         type="text"
@@ -43,8 +51,12 @@ export default function AdvertisementDatabase() {
           <p>Hech qanday reklama topilmadi.</p>
         ) : (
           filteredAds.map(ad => (
-            <div className="card" key={ad.id}>
-              {/* Kichiklashtirilgan rasm */}
+            <div
+              className="card"
+              key={ad.id}
+              onClick={() => navigate(`/edit-ad/${ad.id}`)}
+              style={{ cursor: 'pointer' }}
+            >
               {ad.photo && (
                 <img
                   src={ad.photo}
@@ -65,7 +77,6 @@ export default function AdvertisementDatabase() {
                 <p className="card-sub"><b>Qurilma turi:</b> {ad.Qurilma_turi_uz}</p>
                 <p className="card-sub"><b>Aloqa raqami:</b> {ad.contact_number}</p>
 
-                {/* Faylga havola agar mavjud bo‘lsa */}
                 {ad.Shartnoma_fayl && (
                   <p className="card-sub">
                     <a href={ad.Shartnoma_fayl} target="_blank" rel="noopener noreferrer">

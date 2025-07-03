@@ -11,7 +11,7 @@ import './App.css';
 import AddStationForm from './AddStationForm';
 import AddPositionForm from './AddPositionForm';
 import AddLineForm from './AddLineForm';
-
+import EditAdvertisementPage from './EditAdvertisementPage';
 function Navbar({ onLogout }) {
   return (
     <nav className="nav">
@@ -36,7 +36,7 @@ function AppContent() {
       <Route path="/add-line" element={<AddLineForm />} />
       <Route path="/add-station" element={<AddStationForm />} />
       <Route path="/add-position" element={<AddPositionForm />} />
-
+      <Route path="/edit-ad/:id" element={<EditAdvertisementPage />} />
     </Routes>
   );
 }

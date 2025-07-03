@@ -68,7 +68,7 @@ MIDDLEWARE = [
     'axes.middleware.AxesMiddleware',
 ]
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
+    "*",
 ]
 
 # URLs & Templates

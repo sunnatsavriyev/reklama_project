@@ -4,6 +4,7 @@ import './App.css';
 
 export default function AddStationForm() {
   const [nameUz, setNameUz] = useState('');
+  const [nameRu, setNameRu] = useState('');
   const [lineId, setLineId] = useState('');
   const [lines, setLines] = useState([]);
   const [schemaImage, setSchemaImage] = useState(null);
@@ -18,13 +19,14 @@ export default function AddStationForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!lineId || !nameUz) {
+    if (!lineId || !nameUz || !nameRu) {
       setMessage({ type: 'error', text: "Barcha maydonlarni to‘ldiring!" });
       return;
     }
 
     const formData = new FormData();
     formData.append('name_uz', nameUz);
+    formData.append('name_ru', nameRu);
     formData.append('line', lineId);
     if (schemaImage) {
       formData.append('schema_image', schemaImage);
@@ -37,6 +39,7 @@ export default function AddStationForm() {
       });
       setMessage({ type: 'success', text: "✅ Bekat muvaffaqiyatli qo‘shildi!" });
       setNameUz('');
+      setNameRu('');
       setLineId('');
       setSchemaImage(null);
     } catch (err) {
@@ -52,20 +55,16 @@ export default function AddStationForm() {
       <h2 className="form-title">Bekat qo‘shish</h2>
       <form className="form-grid" onSubmit={handleSubmit}>
         <label>Bekat nomi (UZ):</label>
-        <input
-          type="text"
-          value={nameUz}
-          onChange={e => setNameUz(e.target.value)}
-          required
-        />
+        <input type="text" value={nameUz} onChange={e => setNameUz(e.target.value)} required />
+
+        <label>Bekat nomi (RU):</label>
+        <input type="text" value={nameRu} onChange={e => setNameRu(e.target.value)} required />
 
         <label>Liniya tanlang:</label>
         <select value={lineId} onChange={e => setLineId(e.target.value)} required>
           <option value="">-- Tanlang --</option>
           {lines.map(line => (
-            <option key={line.id} value={line.id}>
-              {line.name_uz || line.name}
-            </option>
+            <option key={line.id} value={line.id}>{line.name_uz || line.name}</option>
           ))}
         </select>
 

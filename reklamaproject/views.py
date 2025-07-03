@@ -69,7 +69,7 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
 
         AdvertisementArchive.objects.create(
             original_ad=old_instance,
-            user=old_instance.user,
+            user=self.request.user,
             position=old_instance.position,
             line=line,
             station=station,
@@ -115,7 +115,7 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
 
                 AdvertisementArchive.objects.create(
                     original_ad=target_ad,
-                    user=target_ad.user,
+                    user=self.request.user,
                     position=target_ad.position,
                     line=target_line,
                     station=target_station,
@@ -143,7 +143,7 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
 
             # 3. Source reklamani target pozitsiyaga nusxalaymiz
             Advertisement.objects.create(
-                user=source_ad.user,
+                user=self.request.user,
                 position=target_position,
                 Reklama_nomi_uz=source_ad.Reklama_nomi_uz,
                 Reklama_nomi_ru=source_ad.Reklama_nomi_ru,
@@ -171,7 +171,7 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
 
             AdvertisementArchive.objects.create(
                 original_ad=source_ad,
-                user=source_ad.user,
+                user=self.request.user,
                 position=source_ad.position,
                 line=source_line,
                 station=source_station,
@@ -208,3 +208,4 @@ class AdvertisementArchiveViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['Reklama_nomi_uz', 'Shartnoma_raqami_uz']
     ordering_fields = ['created_at', 'Qurilma_narxi']
     filterset_fields = ['line','station', 'position']
+

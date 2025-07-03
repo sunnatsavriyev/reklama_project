@@ -47,7 +47,7 @@ export default function ArchivePage() {
                 <p className="card-sub">Maydon: {ad.Egallagan_maydon} m²</p>
                 <p className="card-sub">Summasi: {ad.Shartnoma_summasi} so‘m</p>
                 <p className="card-username">
-                  Yangilagan: {ad.updated_by?.username || "Noma'lum"}
+                  Yangilagan: {ad.user || "Noma'lum"}
                 </p>
               </div>
             </div>

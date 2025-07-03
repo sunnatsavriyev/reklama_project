@@ -34,14 +34,12 @@ export default function AdvertisementAddPage() {
 
   const navigate = useNavigate();
 
-  // Liniyalar
   useEffect(() => {
     axios.get('lines/')
       .then(res => setLines(res.data))
       .catch(err => console.error('Liniyalarni olishda xatolik', err));
   }, []);
 
-  // Bekatlar
   useEffect(() => {
     if (selectedLine) {
       axios.get(`stations/?line=${selectedLine}`)
@@ -52,7 +50,6 @@ export default function AdvertisementAddPage() {
     }
   }, [selectedLine]);
 
-  // Joylar
   useEffect(() => {
     if (selectedStation) {
       axios.get(`positions/?station=${selectedStation}`)
@@ -75,7 +72,6 @@ export default function AdvertisementAddPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
       if (value !== null && value !== '') {
@@ -116,7 +112,7 @@ export default function AdvertisementAddPage() {
       olchov: 'O‘lchov birligi (UZ)',
       olchovRu: 'O‘lchov birligi (RU)',
       narx: 'Narx',
-      maydon: 'Maydon (m²)',
+      maydon: 'Maydon',
       summa: 'Shartnoma summasi',
       tel: 'Aloqa raqami',
       file: 'Shartnoma fayli',
@@ -193,8 +189,23 @@ export default function AdvertisementAddPage() {
         <input type="text" name="Shartnoma_raqami_ru" placeholder={t[language].shartnomaRaqamiRu} onChange={handleChange} required />
         <input type="date" name="Shartnoma_muddati_boshlanishi" onChange={handleChange} required />
         <input type="date" name="Shartnoma_tugashi" onChange={handleChange} required />
-        <input type="text" name="O_lchov_birligi_uz" placeholder={t[language].olchov} onChange={handleChange} required />
-        <input type="text" name="O_lchov_birligi_ru" placeholder={t[language].olchovRu} onChange={handleChange} required />
+
+        <label>{t[language].olchov}</label>
+        <select name="O_lchov_birligi_uz" value={formData.O_lchov_birligi_uz} onChange={handleChange} required>
+          <option value="">-- {t[language].olchov} --</option>
+          <option value="dona">Dona</option>
+          <option value="kv_metr">Kv metr</option>
+          <option value="komplekt">Komplekt</option>
+        </select>
+
+        <label>{t[language].olchovRu}</label>
+        <select name="O_lchov_birligi_ru" value={formData.O_lchov_birligi_ru} onChange={handleChange} required>
+          <option value="">-- {t[language].olchovRu} --</option>
+          <option value="штука">Штука</option>
+          <option value="кв. метр">Кв. метр</option>
+          <option value="комплект">Комплект</option>
+        </select>
+
         <input type="number" name="Qurilma_narxi" placeholder={t[language].narx} onChange={handleChange} required />
         <input type="number" name="Egallagan_maydon" placeholder={t[language].maydon} onChange={handleChange} required />
         <input type="number" name="Shartnoma_summasi" placeholder={t[language].summa} onChange={handleChange} required />

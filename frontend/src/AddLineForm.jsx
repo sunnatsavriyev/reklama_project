@@ -2,18 +2,23 @@ import React, { useState } from 'react';
 import axios from './axiosInstance';
 
 export default function AddLineForm() {
-  const [name, setName] = useState('');
+  const [nameUz, setNameUz] = useState('');
+  const [nameRu, setNameRu] = useState('');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // <-- bu GETni to‘xtatadi
+    e.preventDefault();
     try {
-      const response = await axios.post('lines/', { name_uz: name });
+      const response = await axios.post('lines/', {
+        name_uz: nameUz,
+        name_ru: nameRu
+      });
       console.log('Yaratildi:', response.data);
       setSuccess(true);
       setError(null);
-      setName('');
+      setNameUz('');
+      setNameRu('');
     } catch (err) {
       console.error('Xatolik:', err);
       setError('Saqlashda xatolik yuz berdi');
@@ -25,12 +30,20 @@ export default function AddLineForm() {
     <div className="form-container">
       <h2 className="form-title">Yangi liniya qo‘shish</h2>
       <form className="form-grid" onSubmit={handleSubmit}>
-        <label>Nomi:</label>
+        <label>Liniya nomi (UZ):</label>
         <input
           type="text"
-          placeholder="Liniya nomi"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          placeholder="Liniya nomi (uz)"
+          value={nameUz}
+          onChange={(e) => setNameUz(e.target.value)}
+          required
+        />
+        <label>Liniya nomi (RU):</label>
+        <input
+          type="text"
+          placeholder="Liniya nomi (ru)"
+          value={nameRu}
+          onChange={(e) => setNameRu(e.target.value)}
           required
         />
         <button className="form-button" type="submit">Saqlash</button>

@@ -28,29 +28,33 @@ export default function StepForm() {
     <div className="container">
       <h2 className="title">Liniya va Bekat Tanlang</h2>
 
-      {/* Liniya tanlash qismi */}
+      {/* Liniya tanlash + tugmalar */}
       <div className="form-group">
-        <label>Liniyani tanlang:</label>
-        <select onChange={handleLineChange} value={selectedLine}>
-          <option value="">Tanlang...</option>
-          {lines.map(line => (
-            <option key={line.id} value={line.id}>{line.name_uz}</option>
-          ))}
-        </select>
+        <label style={{ marginBottom: '10px', display: 'block' }}>Liniyani tanlang:</label>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <select onChange={handleLineChange} value={selectedLine}>
+            <option value="">Tanlang...</option>
+            {lines.map(line => (
+              <option key={line.id} value={line.id}>{line.name_uz}</option>
+            ))}
+          </select>
 
-        <button
-          className="form-button"
-          onClick={() => navigate('/add-line')}
-          style={{ marginTop: '10px' }}
-        >
-          ➕ Liniya qo‘shish
-        </button>
+          <button className="form-button" onClick={() => navigate('/add-line')}>
+            ➕ Liniya qo‘shish
+          </button>
+          <button className="form-button" onClick={() => navigate('/add-station')}>
+            ➕ Bekat qo‘shish
+          </button>
+          <button className="form-button" onClick={() => navigate('/add-position')}>
+            ➕ Joy qo‘shish
+          </button>
+        </div>
       </div>
 
       {/* Bekatlar ro‘yxati */}
       {stations.length > 0 && (
-        <div className="form-group">
-          <label>Bekatlarni tanlang:</label>
+        <div className="form-group" style={{ marginTop: '30px' }}>
+          <label style={{ marginBottom: '10px' }}>Bekatlarni tanlang:</label>
           <div className="card-list">
             {stations.map(station => (
               <div
@@ -63,14 +67,6 @@ export default function StepForm() {
               </div>
             ))}
           </div>
-
-          <button
-            className="form-button"
-            onClick={() => navigate('/add-station')}
-            style={{ marginTop: '15px' }}
-          >
-            ➕ Bekat qo‘shish
-          </button>
         </div>
       )}
     </div>
