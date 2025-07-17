@@ -13,96 +13,76 @@ export default function StationPage() {
   const [showPositions, setShowPositions] = useState(false);
 
   useEffect(() => {
-    const fetchStationAndPositions = async () => {
+    const fetchData = async () => {
       try {
         const stationRes = await axios.get(`stations/${id}/`);
         setStation(stationRes.data);
 
         const posRes = await axios.get(`positions/?station=${id}`);
         setPositions(posRes.data);
-      } catch (error) {
-        console.error('Xatolik:', error);
+      } catch (err) {
+        console.error("Xatolik:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStationAndPositions();
+    fetchData();
   }, [id]);
 
   if (loading) return <p>Yuklanmoqda...</p>;
   if (!station) return <p>Bekat topilmadi</p>;
 
-  const advertisedPositions = positions.filter(pos => pos.advertisement);
+  const advertisedPositions = positions.filter(p => p.advertisement);
 
   return (
     <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-      
-      {/* === STANSIYA NOMI + 3ta TUGMA BIRGA === */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <h2 className="title" style={{ margin: 0 }}>{station.name_uz} bekati</h2>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="form-button" onClick={() => navigate('/add-line')}>
-            ➕ Liniya qo‘shish
-          </button>
-          <button className="form-button" onClick={() => navigate('/add-station')}>
-            ➕ Bekat qo‘shish
-          </button>
-          <button className="form-button" onClick={() => navigate('/add-position')}>
-            ➕ Joy qo‘shish
-          </button>
-        </div>
-      </div>
+      <h2>{station.name_uz} bekati</h2>
 
-      {/* === SXEMA RASMI === */}
-      {station.schema_image && (
-        <img
-          src={station.schema_image}
-          alt="Sxema"
-          style={{
-            maxWidth: '600px',
-            maxHeight: '400px',
-            width: '100%',
-            objectFit: 'contain',
-            borderRadius: '10px',
-            boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-            marginTop: '20px',
-          }}
-        />
-      )}
+      {/* === SXEMA VA TUGMA YONMA-YON === */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px', flexWrap: 'wrap' }}>
+        {/* Schema Image */}
+        {station.schema_image && (
+          <img
+            src={station.schema_image}
+            alt="Schema"
+            style={{
+              width: '100%',
+              maxWidth: '600px',
+              borderRadius: '10px',
+              objectFit: 'contain',
+            }}
+          />
+        )}
 
-      {/* === JOYLAR VA REKLAMA RO‘YXATI === */}
-      <div style={{ flex: 1 }}>
-        <h3>Reklamali joylar</h3>
-
-        {advertisedPositions.length === 0 ? (
-          <p>Reklamali joy mavjud emas</p>
-        ) : (
+        {/* Joylarni ko‘rish tugmasi */}
+        {advertisedPositions.length > 0 && (
           <div>
             <button
               className="form-button"
               onClick={() => setShowPositions(!showPositions)}
-              style={{ marginBottom: '15px', width: '100%' }}
+              style={{ marginBottom: '15px', width: '200px' }}
             >
-              {showPositions ? 'Joylarni yashirish' : 'Joylarni ko‘rish'}
+              {showPositions ? "Joylarni yashirish" : "Joylarni ko‘rish"}
             </button>
-
-            {showPositions && (
-              <div className="position-buttons-container">
-                {advertisedPositions.map(pos => (
-                  <button
-                    key={pos.id}
-                    className="position-button"
-                    onClick={() => navigate(`/joy/${pos.id}`)}
-                  >
-                    Joy #{pos.number}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         )}
       </div>
+
+      {/* === Reklamali joylar ro‘yxati === */}
+      {showPositions && (
+        <div className="position-buttons-container">
+          {advertisedPositions.map(pos => (
+            <button
+              key={pos.id}
+              className="position-button"
+              onClick={() => navigate(`/joy/${pos.id}`)}
+            >
+              Joy #{pos.number}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -12,13 +12,16 @@ import AddStationForm from './AddStationForm';
 import AddPositionForm from './AddPositionForm';
 import AddLineForm from './AddLineForm';
 import EditAdvertisementPage from './EditAdvertisementPage';
+import MetroMap from './MetroMap';
+
 function Navbar({ onLogout }) {
   return (
     <nav className="nav">
       <Link to="/form"><button>Liniyalar</button></Link>
       <Link to="/database"><button>Ma'lumotlar bazasi</button></Link>
       <Link to="/archive"><button>Arxiv</button></Link>
-      <button onClick={onLogout}>Chiqish</button>
+      <Link to="/map"><button>🗺 Metro sxemasi</button></Link>
+      <button onClick={onLogout}>🚪 Chiqish</button>
     </nav>
   );
 }
@@ -37,6 +40,7 @@ function AppContent() {
       <Route path="/add-station" element={<AddStationForm />} />
       <Route path="/add-position" element={<AddPositionForm />} />
       <Route path="/edit-ad/:id" element={<EditAdvertisementPage />} />
+      <Route path="/map" element={<MetroMap />} />
     </Routes>
   );
 }

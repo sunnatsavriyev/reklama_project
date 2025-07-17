@@ -13,6 +13,7 @@ class MetroLineAdmin(admin.ModelAdmin):
 class StationAdmin(admin.ModelAdmin):
     list_display = ['id', 'name_uz', 'name_ru', 'line','schema_image_display']
     list_filter = ['line']
+    # list_editable = ('x', 'y')
     search_fields = ['name_uz', 'name_ru']
     verbose_name = _("Bekat")
     verbose_name_plural = _("Bekatlar")

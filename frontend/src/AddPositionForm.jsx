@@ -9,7 +9,6 @@ export default function AddPositionForm() {
   const [selectedLine, setSelectedLine] = useState('');
   const [stationId, setStationId] = useState('');
   const [numberUz, setNumberUz] = useState('');
-  const [numberRu, setNumberRu] = useState('');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
 
@@ -33,28 +32,26 @@ export default function AddPositionForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!stationId || !numberUz || !numberRu) {
+    setError(null);
+    setSuccess(false);
+
+    if (!stationId || !numberUz) {
       setError("Barcha maydonlarni to‘ldiring!");
-      setSuccess(false);
       return;
     }
 
     try {
       await axios.post('positions/', {
         station: stationId,
-        number: numberUz,
-        number_ru: numberRu
+        number: numberUz,  // faqat bitta raqam yuboriladi
       });
       setSuccess(true);
-      setError(null);
       setStationId('');
       setNumberUz('');
-      setNumberRu('');
       setSelectedLine('');
     } catch (err) {
       console.error(err);
       setError("Joy qo‘shishda xatolik!");
-      setSuccess(false);
     }
   };
 
@@ -85,7 +82,6 @@ export default function AddPositionForm() {
         <label>Joy raqami (UZ):</label>
         <input type="text" value={numberUz} onChange={e => setNumberUz(e.target.value)} required />
 
-        
         <button type="submit" className="form-button">✅ Saqlash</button>
         {success && <p style={{ color: 'green' }}>Joy muvaffaqiyatli qo‘shildi!</p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}

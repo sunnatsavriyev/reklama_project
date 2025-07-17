@@ -18,7 +18,7 @@ export default function EditAdvertisementPage() {
         setFormData({
           ...data,
           position: data.position?.id || data.position,
-          position_data: data.position_data || null // kerak bo‘lsa station olish uchun
+          position_data: data.position_data || null // fallback uchun
         });
       })
       .catch(err => console.error('Xatolik:', err));
@@ -60,22 +60,38 @@ export default function EditAdvertisementPage() {
   };
 
   const fetchPositions = () => {
-    const stationId = formData?.position_data?.station?.id;
-    if (!stationId) return alert("Joylashgan stansiya aniqlanmadi");
+    if (!formData?.position) return alert("Position aniqlanmadi");
 
-    axios.get('positions/')
+    axios.get(`positions/${formData.position}/`)
       .then(res => {
-        const filtered = res.data.filter(p => p.station === stationId);
-        setPositions(filtered);
-        setShowExport(true);
+        const stationId = res.data.station;
+        if (!stationId) {
+          alert('Stansiya aniqlanmadi');
+          return;
+        }
+
+        axios.get('positions/')
+          .then(res2 => {
+            const filtered = res2.data.filter(p => p.station === stationId);
+            setPositions(filtered);
+            setShowExport(true);
+          })
+          .catch(err => {
+            console.error('Positionlarni olishda xatolik:', err);
+            alert('Positionlarni olishda xatolik');
+          });
+
       })
-      .catch(err => console.error('Positionlarni olishda xatolik:', err));
+      .catch(err => {
+        console.error('Positionni olishda xatolik:', err);
+        alert('Position aniqlanmadi');
+      });
   };
 
   const handleExport = () => {
     if (!selectedPosition) return alert('Iltimos, joy tanlang!');
     axios.post(`advertisements/${id}/export/`, {
-      position: selectedPosition
+      position: parseInt(selectedPosition)
     })
       .then(res => {
         alert(res.data.detail || 'Export muvaffaqiyatli');
@@ -93,9 +109,10 @@ export default function EditAdvertisementPage() {
     <div style={{ padding: '20px' }}>
       <h2>Reklamani tahrirlash</h2>
 
-      {[ 'Reklama_nomi_uz', 'Shartnoma_raqami_uz', 'Ijarachi_uz', 'Shartnoma_muddati_boshlanishi',
-         'Shartnoma_tugashi', 'O_lchov_birligi_uz', 'Qurilma_turi_uz', 'Qurilma_narxi',
-         'Egallagan_maydon', 'Shartnoma_summasi', 'contact_number'
+      {[
+        'Reklama_nomi_uz', 'Shartnoma_raqami_uz', 'Ijarachi_uz', 'Shartnoma_muddati_boshlanishi',
+        'Shartnoma_tugashi', 'O_lchov_birligi_uz', 'Qurilma_turi_uz', 'Qurilma_narxi',
+        'Egallagan_maydon', 'Shartnoma_summasi', 'contact_number'
       ].map(field => (
         <input
           key={field}
@@ -149,7 +166,6 @@ export default function EditAdvertisementPage() {
         📤 Export (joy tanlash)
       </button>
 
-      {/* Export joy tanlash oynasi */}
       {showExport && (
         <div style={{ marginTop: '20px' }}>
           <label><b>Ko‘chirish uchun yangi joyni tanlang:</b></label>

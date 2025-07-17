@@ -22,7 +22,8 @@ class Station(models.Model):
     # name_en = models.CharField(max_length=100, help_text="Inglizcha nomi")
     line = models.ForeignKey(MetroLine, on_delete=models.CASCADE, related_name='stations', null=True, blank=True)
     schema_image = models.ImageField(upload_to='station_schemas/', null=True, blank=True, help_text="Bekat sxemasi rasmi")
-
+    # x = models.FloatField(help_text='Horizontal position (0-100%)', null=True, blank=True)
+    # y = models.FloatField(help_text='Vertical position (0-100%)', null=True, blank=True)
     def __str__(self):
         return f"{self.name_uz} ({self.line.name_uz})" if self.line and self.line.name_uz else self.name_uz or "No name"
 

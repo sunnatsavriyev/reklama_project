@@ -68,9 +68,12 @@ MIDDLEWARE = [
     'axes.middleware.AxesMiddleware',
 ]
 CORS_ALLOWED_ORIGINS = [
-    "*",
+    'http://localhost:3000',
+    'http://172.23.222.63:3000',
 ]
 
+
+CORS_ALLOW_CREDENTIALS = True
 # URLs & Templates
 ROOT_URLCONF = 'home.urls'
 TEMPLATES = [
