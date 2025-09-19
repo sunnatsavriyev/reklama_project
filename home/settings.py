@@ -80,6 +80,7 @@ CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[
     "https://2abfcea964d1.ngrok-free.app",
     "http://localhost:9000",
     "https://reklama-project.onrender.com",
+    "https://marketing-metro-official.vercel.app",
 ])
 CORS_ALLOW_CREDENTIALS = True
 
@@ -94,6 +95,7 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[
     "https://2abfcea964d1.ngrok-free.app",
     "http://localhost:9000",
     "https://reklama-project.onrender.com",
+    "https://marketing-metro-official.vercel.app",
 ])
 
 # --- URL ---
