@@ -209,6 +209,7 @@ class IjarachiViewSet(viewsets.ModelViewSet):
     search_fields = ["name", "contact_number"]  # izlash imkoniyati
     ordering_fields = ["name", "id"]
     filterset_fields = ["name"]  # filter qilish uchun
+    pagination_class = CustomPagination
     
     def perform_create(self, serializer):
         """Agar foydalanuvchiga bog‘lash kerak bo‘lsa"""
