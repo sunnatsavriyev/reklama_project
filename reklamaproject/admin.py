@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
-from .models import MetroLine, Station, Position, Advertisement, AdvertisementArchive
+from .models import MetroLine, Station, Position, Advertisement, AdvertisementArchive, Ijarachi
 
 @admin.register(MetroLine)
 class MetroLineAdmin(admin.ModelAdmin):
@@ -30,55 +30,83 @@ class PositionAdmin(admin.ModelAdmin):
     search_fields = ['station__name',]
     verbose_name = _("Joylashuv")
     verbose_name_plural = _("Joylashuvlar")
+    
+    
+    
+@admin.register(Ijarachi)
+class IjarachiAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'contact_number', 'logo_display']
+    search_fields = ['name', 'contact_number']
+    verbose_name = _("Ijarachi")
+    verbose_name_plural = _("Ijarachilar")
+
+    def logo_display(self, obj):
+        if obj.logo:
+            return f"<img src='{obj.logo.url}' width='60' height='40' />"
+        return "Yo'q"
+    logo_display.allow_tags = True
+    logo_display.short_description = "Logo"
+
+
+
 
 @admin.register(Advertisement)
 class AdvertisementAdmin(admin.ModelAdmin):
     list_display = [
-        'Reklama_nomi', 'Ijarachi', 
-        'get_station', 'Qurilma_turi', 
-        'Shartnoma_raqami',
-        'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi','O_lchov_birligi',
-        'Qurilma_narxi', 'Egallagan_maydon', 'Shartnoma_summasi','Shartnoma_fayl',
+        'Reklama_nomi', 'get_ijarachi_name', 'get_ijarachi_contact',
+        'get_station', 'Qurilma_turi',
+        'Shartnoma_raqami', 'Shartnoma_muddati_boshlanishi',
+        'Shartnoma_tugashi', 'O_lchov_birligi',
+        'Qurilma_narxi', 'Egallagan_maydon', 'Shartnoma_summasi',
+        'Shartnoma_fayl',
     ]
-    list_filter = [
-        'Ijarachi', 
-        'Qurilma_turi',
-    ]
-    search_fields = [
-        'Ijarachi', 
-        'Qurilma_turi',
-    ]
+    list_filter = ['Ijarachi', 'Qurilma_turi']
+    search_fields = ['Reklama_nomi', 'Shartnoma_raqami', 'Ijarachi__name']
     verbose_name = _("Reklama")
     verbose_name_plural = _("Reklamalar")
 
     @admin.display(description=_("Bekat"))
     def get_station(self, obj):
         if obj.position and obj.position.station:
-            return f"{obj.position.station.name} "
+            return obj.position.station.name
         return "-"
+
+    @admin.display(description=_("Ijarachi nomi"))
+    def get_ijarachi_name(self, obj):
+        return obj.Ijarachi.name if obj.Ijarachi else "-"
+
+    @admin.display(description=_("Ijarachi telefon"))
+    def get_ijarachi_contact(self, obj):
+        return obj.Ijarachi.contact_number if obj.Ijarachi else "-"
+
+
 @admin.register(AdvertisementArchive)
 class AdvertisementArchiveAdmin(admin.ModelAdmin):
-    list_display = ['Reklama_nomi', 
-        'Qurilma_turi', 'Shartnoma_raqami',
-        'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi','O_lchov_birligi',
-        'Qurilma_narxi',  'Shartnoma_summasi','Shartnoma_fayl', 'user', 'created_at']
+    list_display = [
+        'Reklama_nomi', 'Qurilma_turi', 'Shartnoma_raqami',
+        'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi',
+        'O_lchov_birligi', 'Qurilma_narxi',
+        'Shartnoma_summasi', 'Shartnoma_fayl',
+        'user', 'created_at'
+    ]
     search_fields = ['Reklama_nomi', 'Shartnoma_raqami']
     list_filter = ['created_at', 'user']
-    readonly_fields = [  
-        'original_ad', 'user', 'position', 'Reklama_nomi', 
-        'Qurilma_turi',  'Ijarachi',
-        'Shartnoma_raqami', 
+
+    readonly_fields = [
+        'original_ad', 'user', 'line', 'station', 'position',
+        'Reklama_nomi', 'Qurilma_turi', 'Ijarachi',
+        'Shartnoma_raqami',
         'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi',
         'O_lchov_birligi', 'Qurilma_narxi',
         'Egallagan_maydon', 'Shartnoma_summasi', 'Shartnoma_fayl',
-        'photo', 'contact_number', 'created_at'
+        'photo', 'created_at'
     ]
 
     def has_add_permission(self, request):
-        return False  
+        return False
 
     def has_change_permission(self, request, obj=None):
-        return False  
+        return False
 
     def has_delete_permission(self, request, obj=None):
-        return True 
+        return True

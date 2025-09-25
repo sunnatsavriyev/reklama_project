@@ -1,9 +1,11 @@
 from rest_framework import viewsets, permissions, filters
 from rest_framework.views import APIView
-from .models import MetroLine, Station, Position, Advertisement, AdvertisementArchive
+from .models import MetroLine, Station, Position, Advertisement, AdvertisementArchive, Ijarachi
 from .serializers import (
     MetroLineSerializer, StationSerializer,
-    PositionSerializer, AdvertisementSerializer, AdvertisementArchiveSerializer, CreateAdvertisementSerializer, ExportAdvertisementSerializer,AdvertisementStatisticsSerializer
+    PositionSerializer, AdvertisementSerializer, AdvertisementArchiveSerializer, 
+    CreateAdvertisementSerializer, ExportAdvertisementSerializer,AdvertisementStatisticsSerializer,
+    IjarachiSerializers
 )
 from .pagination import CustomPagination
 from rest_framework import status
@@ -196,6 +198,27 @@ class PositionViewSet(viewsets.ModelViewSet):
             ad.delete()
 
         instance.delete()
+
+
+
+class IjarachiViewSet(viewsets.ModelViewSet):
+    queryset = Ijarachi.objects.all().order_by("-id")
+    serializer_class = IjarachiSerializers
+    permission_classes = [AuthenticatedCRUDPermission]  # faqat ro‘yxatdan o‘tganlar CRUD qiladi
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    search_fields = ["name", "contact_number"]  # izlash imkoniyati
+    ordering_fields = ["name", "id"]
+    filterset_fields = ["name"]  # filter qilish uchun
+    
+    def perform_create(self, serializer):
+        """Agar foydalanuvchiga bog‘lash kerak bo‘lsa"""
+        serializer.save()
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+
+
 
 class AdvertisementViewSet(viewsets.ModelViewSet):
     queryset = Advertisement.objects.all()
@@ -778,7 +801,7 @@ class AdvertisementStatisticsView(APIView):
             .order_by("-total")[:10]
         )
         hamkor_tashkilot_soni = Advertisement.objects.values("Ijarachi").distinct().count()
-        shartnoma_jami = Advertisement.objects.aggregate(total=Sum("Shartnoma_summasi"))["total"] or 0
+        reklamadan_tushadigan_umumiy_summa = Advertisement.objects.aggregate(total=Sum("Shartnoma_summasi"))["total"] or 0
 
         serializer = AdvertisementStatisticsSerializer({
             "top_5_ads": top_5_ads,
@@ -787,7 +810,7 @@ class AdvertisementStatisticsView(APIView):
             "counts": [ 
                 {"name": "total_count", "value": total_count, "color": "barcha reklamalar soni"}, 
                 {"name": "hamkor_tashkilot_soni", "value": hamkor_tashkilot_soni, "color": "hamkor tashkilotlar soni"}, 
-                {"name": "shartnoma_jami", "value": shartnoma_jami, "color": "shartnoma jami"}
+                {"name": "reklamadan_tushadigan_umumiy_summa", "value": reklamadan_tushadigan_umumiy_summa, "color": "reklamadan tushadigan umumiy summa"}
             ]
             
         }, context={"request": request})

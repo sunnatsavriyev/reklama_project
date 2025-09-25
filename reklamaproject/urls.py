@@ -1,6 +1,7 @@
 from rest_framework.routers import DefaultRouter
 from .views import (MetroLineViewSet, StationViewSet, PositionViewSet, AdvertisementViewSet, AdvertisementArchiveViewSet, Last10AdvertisementImagesView, 
-        get_me, ExpiredAdvertisementViewSet, Stationimage, AllAdvertisementsViewSet, CheckAuthView, AdvertisementStatisticsView,StatisticsCountAPI)
+        get_me, ExpiredAdvertisementViewSet, Stationimage, AllAdvertisementsViewSet, CheckAuthView, IjarachiViewSet,
+        AdvertisementStatisticsView,StatisticsCountAPI)
 from django.urls import path
 router = DefaultRouter()
 router.register(r'lines', MetroLineViewSet)
@@ -10,6 +11,7 @@ router.register(r'advertisements', AdvertisementViewSet)
 router.register(r'advertisements-archive', AdvertisementArchiveViewSet)
 router.register(r'tugashi-advertisements', ExpiredAdvertisementViewSet, basename='tugashi-advertisements')
 router.register(r'all-advertisements', AllAdvertisementsViewSet, basename='all-advertisements')
+router.register(r"ijarachilar", IjarachiViewSet, basename="ijarachilar")
 
 urlpatterns =  [
     path("advertisements/statistics/", AdvertisementStatisticsView.as_view(), name="advertisement-statistics"),

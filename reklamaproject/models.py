@@ -4,7 +4,7 @@ from .validators import validate_file_extension
 import logging
 from django.core.validators import FileExtensionValidator
 logger = logging.getLogger(__name__)
-
+from django.utils import timezone
 User = get_user_model()
 
 class MetroLine(models.Model):
@@ -44,13 +44,28 @@ class Position(models.Model):
         verbose_name_plural = "Pozitsiyalar"
 
 
+
+
+
+class Ijarachi(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    contact_number = models.CharField(max_length=20)
+    logo = models.ImageField(upload_to='ijarachi_logos/', null=True, blank=True)
+    
+    def __str__(self):
+        return self.name
+    
+
+
+
+
         
 class Advertisement(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ads')
     position = models.OneToOneField(Position, on_delete=models.CASCADE, related_name='advertisement', null=True, blank=True)
     Reklama_nomi = models.CharField(max_length=255, default='Reklama nomi',)
     Qurilma_turi = models.CharField(max_length=100, default='led',)
-    Ijarachi = models.CharField(max_length=255, null=True, blank=True)
+    Ijarachi = models.ForeignKey(Ijarachi, on_delete=models.SET_NULL, null=True, blank=True)
     Shartnoma_raqami = models.CharField(max_length=100, help_text="Shartnoma raqami o'zbekcha", null=True, blank=True)
     Shartnoma_muddati_boshlanishi = models.DateField()
     Shartnoma_tugashi = models.DateField()
@@ -67,8 +82,7 @@ class Advertisement(models.Model):
     Shartnoma_summasi = models.DecimalField(max_digits=20, decimal_places=2 , default=0)
     Shartnoma_fayl = models.FileField(upload_to='contracts/', default=None, validators=[validate_file_extension], null=True, blank=True)
     photo = models.ImageField(upload_to='ad_photos/', null=True, blank=True)
-    contact_number = models.CharField(max_length=20, default='+998')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         if self.Reklama_nomi and self.position:
@@ -84,7 +98,7 @@ class AdvertisementArchive(models.Model):
     position = models.ForeignKey(Position, on_delete=models.SET_NULL, null=True, blank=True)
     Reklama_nomi = models.CharField(max_length=255)
     Qurilma_turi = models.CharField(max_length=100)
-    Ijarachi = models.CharField(max_length=255, null=True, blank=True)
+    Ijarachi = models.ForeignKey(Ijarachi, on_delete=models.SET_NULL, null=True, blank=True)
     Shartnoma_raqami= models.CharField(max_length=100, null=True, blank=True)
     Shartnoma_muddati_boshlanishi = models.DateField()
     Shartnoma_tugashi = models.DateField()
@@ -94,8 +108,7 @@ class AdvertisementArchive(models.Model):
     Shartnoma_summasi = models.DecimalField(max_digits=20, decimal_places=2)
     Shartnoma_fayl = models.FileField(upload_to='contracts_archive/', null=True, blank=True)
     photo = models.ImageField(upload_to='ad_photos_archive/', null=True, blank=True)
-    contact_number = models.CharField(max_length=20)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return f"{self.Reklama_nomi} ({self.position})"

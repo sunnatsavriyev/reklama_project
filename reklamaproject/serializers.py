@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Advertisement, Station, MetroLine, Position, AdvertisementArchive
+from .models import Advertisement, Station, MetroLine, Position, AdvertisementArchive, Ijarachi 
 from rest_framework.fields import CurrentUserDefault
 from datetime import date, timedelta
 
@@ -20,6 +20,13 @@ class StationSerializer(serializers.ModelSerializer):
 
 
 
+class IjarachiSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Ijarachi
+        fields = ['id', 'name',"logo", "contact_number"]
+
+
+
 class AdvertisementSerializer(serializers.ModelSerializer):
     station = serializers.CharField(source='position.station.name', read_only=True)
     position_number = serializers.IntegerField(source='position.number', read_only=True)
@@ -27,6 +34,16 @@ class AdvertisementSerializer(serializers.ModelSerializer):
     photo = serializers.ImageField(use_url=True)
     # Reklama ko'rishda barcha pozitsiyalar bo'lishi mumkin
     position = serializers.PrimaryKeyRelatedField(queryset=Position.objects.all())
+    Ijarachi = serializers.PrimaryKeyRelatedField(
+        queryset=Ijarachi.objects.all(),
+        required=False,
+        allow_null=True
+    )
+
+    # READ uchun nested obyekt
+    ijarachi = IjarachiSerializers(source="Ijarachi", read_only=True)
+    ijarachi_contact = serializers.CharField(source="Ijarachi.contact_number", read_only=True)
+    ijarachi_logo = serializers.ImageField(source="Ijarachi.logo", read_only=True)
 
     class Meta:
         model = Advertisement
@@ -34,12 +51,15 @@ class AdvertisementSerializer(serializers.ModelSerializer):
             'id', 'user', 'position', 'station', 'position_number',
             'Reklama_nomi', 
             'Qurilma_turi',
-            'Ijarachi', 
+            'Ijarachi',          # id bilan yuboriladi
+            'ijarachi',          # nested obyekt (name, contact_number, logo)
+            'ijarachi_contact',
+            'ijarachi_logo', 
             'Shartnoma_raqami',
             'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi',
             'O_lchov_birligi', 
             'Qurilma_narxi', 'Egallagan_maydon', 'Shartnoma_summasi',
-            'Shartnoma_fayl', 'photo', 'contact_number', 'created_at',
+            'Shartnoma_fayl', 'photo', 'created_at',
             'created_by',
         ]
         read_only_fields = ['user']
@@ -62,18 +82,20 @@ class AdvertisementSerializer(serializers.ModelSerializer):
 
 # Reklama YARATISH uchun — faqat advertisement bo'sh joylar
 class CreateAdvertisementSerializer(AdvertisementSerializer):
-    position = serializers.PrimaryKeyRelatedField(queryset=Position.objects.none(), required=True,allow_null=False)
+    position = serializers.PrimaryKeyRelatedField(
+        queryset=Position.objects.none(),
+        required=True,
+        allow_null=False
+    )
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         if self.instance:
             current_position = self.instance.position
             bosh_joylar = Position.objects.filter(advertisement__isnull=True)
-
             if current_position:
                 bosh_joylar = bosh_joylar | Position.objects.filter(pk=current_position.pk)
-
             self.fields['position'].queryset = bosh_joylar.distinct()
         else:
             self.fields['position'].queryset = Position.objects.filter(advertisement__isnull=True)
@@ -134,6 +156,14 @@ class AdvertisementArchiveSerializer(serializers.ModelSerializer):
     line_name = serializers.CharField(source='line.name', read_only=True)
     station_name = serializers.CharField(source='station.name', read_only=True)
     created_by = serializers.CharField(source="user.username", read_only=True)
+    Ijarachi = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=Ijarachi.objects.all()
+    )
+
+    # GET javobida esa to‘liq Ijarachi obyektini qaytaradi
+    ijarachi = IjarachiSerializers(source='Ijarachi', read_only=True)
+
     class Meta:
         model = AdvertisementArchive
         fields = '__all__'
