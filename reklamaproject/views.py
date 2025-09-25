@@ -35,7 +35,7 @@ import io
 from reportlab.lib.styles import getSampleStyleSheet
 import requests
 from django.utils.timezone import now
-from django.db.models import Count
+from django.db.models import Count, Sum
 
 class XLSXRenderer(BaseRenderer):
     media_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -786,18 +786,23 @@ class AdvertisementStatisticsView(APIView):
         top_5_stations = (
             Advertisement.objects.values("position__station__name")
             .annotate(total=Count("id"))
-            .order_by("-total")[:4]
+            .order_by("-total")[:10]
         )
+        hamkor_tashkilot_soni = Advertisement.objects.values("Ijarachi").distinct().count()
+        shartnoma_jami = Advertisement.objects.aggregate(total=Sum("Shartnoma_summasi"))["total"] or 0
 
         serializer = AdvertisementStatisticsSerializer({
             "top_5_ads": top_5_ads,
             "last_10_ads": last_10_ads,
             "top_5_stations": list(top_5_stations),
+            "hamkor_tashkilot_soni": hamkor_tashkilot_soni,
+            "shartnoma_jami": shartnoma_jami,
             "counts": [ 
                 {"name": "last_month_count", "value": last_month_count, "color": "o'tgan oydagi reklamalar soni"}, 
                 {"name": "this_month_count", "value": this_month_count, "color": "shu oydagi reklamalar soni"}, 
                 {"name": "total_count", "value": total_count, "color": "barcha reklamalar soni"}, 
             ]
+            
         }, context={"request": request})
 
         return Response(serializer.data)
@@ -828,7 +833,7 @@ class Last10AdvertisementImagesView(APIView):
     permission_classes = [permissions.IsAuthenticated]  
 
     def get(self, request):
-        ads = Advertisement.objects.order_by("-created_at")[:10]
+        ads = Advertisement.objects.order_by("-created_at")[:5]
         data = [
             {
                 "id": ad.id,
