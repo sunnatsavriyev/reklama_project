@@ -166,5 +166,3 @@ class AdvertisementStatisticsSerializer(serializers.Serializer):
         child=serializers.DictField()
     )
     counts = CountSerializer(many=True)
-    hamkor_tashkilot_soni = serializers.IntegerField()
-    shartnoma_jami = serializers.FloatField()

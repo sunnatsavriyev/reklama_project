@@ -795,12 +795,12 @@ class AdvertisementStatisticsView(APIView):
             "top_5_ads": top_5_ads,
             "last_10_ads": last_10_ads,
             "top_5_stations": list(top_5_stations),
-            "hamkor_tashkilot_soni": hamkor_tashkilot_soni,
-            "shartnoma_jami": shartnoma_jami,
             "counts": [ 
                 {"name": "last_month_count", "value": last_month_count, "color": "o'tgan oydagi reklamalar soni"}, 
                 {"name": "this_month_count", "value": this_month_count, "color": "shu oydagi reklamalar soni"}, 
                 {"name": "total_count", "value": total_count, "color": "barcha reklamalar soni"}, 
+                {"name": "hamkor_tashkilot_soni", "value": hamkor_tashkilot_soni, "color": "hamkor tashkilotlar soni"}, 
+                {"name": "shartnoma_jami", "value": shartnoma_jami, "color": "shartnoma jami"}
             ]
             
         }, context={"request": request})
