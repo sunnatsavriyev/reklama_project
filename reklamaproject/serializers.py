@@ -28,7 +28,9 @@ class AdvertisementNestedSerializer(serializers.ModelSerializer):
             "id", "Reklama_nomi", "Qurilma_turi", "Shartnoma_raqami",
             "Shartnoma_muddati_boshlanishi", "Shartnoma_tugashi",
             "O_lchov_birligi", "Qurilma_narxi", "Egallagan_maydon",
-            "Shartnoma_summasi", "position", "created_at"
+            "Shartnoma_summasi", "position", "created_at", "created_by",
+            'position', 'station',
+            
         ]
 
 
