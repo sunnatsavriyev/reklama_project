@@ -22,17 +22,19 @@ class StationSerializer(serializers.ModelSerializer):
 
 
 class AdvertisementNestedSerializer(serializers.ModelSerializer):
+    created_by = serializers.CharField(source="user.username", read_only=True)
+    station = serializers.CharField(source='position.station.name', read_only=True)
+    position_number = serializers.IntegerField(source='position.number', read_only=True)
+    
     class Meta:
         model = Advertisement
         fields = [
             "id", "Reklama_nomi", "Qurilma_turi", "Shartnoma_raqami",
             "Shartnoma_muddati_boshlanishi", "Shartnoma_tugashi",
             "O_lchov_birligi", "Qurilma_narxi", "Egallagan_maydon",
-            "Shartnoma_summasi", "position", "created_at", "created_by",
-            'position', 'station',
-            
+            "Shartnoma_summasi", "position", "position_number", 
+            "station", "photo", "created_at", "created_by"
         ]
-
 
 
 class IjarachiSerializers(serializers.ModelSerializer):
