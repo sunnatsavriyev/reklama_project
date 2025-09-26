@@ -420,7 +420,8 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
             Shartnoma_summasi=old_instance.Shartnoma_summasi,
             Shartnoma_fayl=old_instance.Shartnoma_fayl,
             photo=old_instance.photo,
-            contact_number=old_instance.contact_number,
+
+
         )
         serializer.save(user=self.request.user)
 
@@ -447,7 +448,7 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
             Shartnoma_summasi=instance.Shartnoma_summasi,
             Shartnoma_fayl=instance.Shartnoma_fayl,
             photo=instance.photo,
-            contact_number=instance.contact_number,
+
         )
         instance.delete()
 
@@ -488,7 +489,8 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
                     Shartnoma_summasi=target_ad.Shartnoma_summasi,
                     Shartnoma_fayl=target_ad.Shartnoma_fayl,
                     photo=target_ad.photo,
-                    contact_number=target_ad.contact_number,
+                    contact_number=source_ad.Ijarachi.contact_number if source_ad.Ijarachi else None
+
                 )
                 # 2. Target joydagi eski reklamani o‘chiramiz
                 target_ad.delete()
@@ -509,7 +511,8 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
                 Shartnoma_summasi=source_ad.Shartnoma_summasi,
                 Shartnoma_fayl=source_ad.Shartnoma_fayl,
                 photo=source_ad.photo,
-                contact_number=source_ad.contact_number,
+                contact_number=source_ad.Ijarachi.contact_number if source_ad.Ijarachi else None
+
             )
 
             source_station = source_ad.position.station
@@ -533,7 +536,8 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
                 Shartnoma_summasi=source_ad.Shartnoma_summasi,
                 Shartnoma_fayl=source_ad.Shartnoma_fayl,
                 photo=source_ad.photo,
-                contact_number=source_ad.contact_number,
+                contact_number=source_ad.Ijarachi.contact_number if source_ad.Ijarachi else None
+
             )
 
             # 5. Source joyni bo‘shatamiz
