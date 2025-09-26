@@ -25,6 +25,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.filters import SearchFilter
 from django.utils import timezone
 import cv2
+from reportlab.pdfgen import canvas
 import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 from django.conf import settings
@@ -38,7 +39,9 @@ from reportlab.lib.styles import getSampleStyleSheet
 import requests
 from django.utils.timezone import now
 from django.db.models import Count, Sum
-
+from io import BytesIO
+import os
+from reportlab.lib.units import inch
 class XLSXRenderer(BaseRenderer):
     media_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     format = 'xlsx'
@@ -201,24 +204,179 @@ class PositionViewSet(viewsets.ModelViewSet):
 
 
 
+
 class IjarachiViewSet(viewsets.ModelViewSet):
     queryset = Ijarachi.objects.all().order_by("-id")
     serializer_class = IjarachiSerializers
-    permission_classes = [AuthenticatedCRUDPermission]  # faqat ro‘yxatdan o‘tganlar CRUD qiladi
+    permission_classes = [AuthenticatedCRUDPermission]  
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
-    search_fields = ["name", "contact_number"]  # izlash imkoniyati
+    search_fields = ["name", "contact_number"]
     ordering_fields = ["name", "id"]
-    filterset_fields = ["name"]  # filter qilish uchun
+    filterset_fields = ["name"]
     pagination_class = CustomPagination
-    
+
     def perform_create(self, serializer):
-        """Agar foydalanuvchiga bog‘lash kerak bo‘lsa"""
         serializer.save()
 
     def perform_update(self, serializer):
         serializer.save()
 
+    # ======================
+    # Excel eksport
+    # ======================
+    @action(detail=False, methods=['get'], url_path='export-excel')
+    def export_excel(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
 
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Ijarachilar"
+
+        headers = ["Rasm", "Ism", "Kontakt raqam"]
+        ws.append(headers)
+
+        for ijarachi in queryset:
+            row = [
+                "",  # Rasm uchun bo‘sh joy qoldiramiz, keyin quyida joylashtiramiz
+                ijarachi.name,
+                ijarachi.contact_number,
+            ]
+            ws.append(row)
+
+            # Agar rasm mavjud bo‘lsa, Excelga joylashtirish
+            if hasattr(ijarachi, 'photo') and ijarachi.photo:
+                try:
+                    img_data = requests.get(ijarachi.photo.url).content
+                    image = XLImage(BytesIO(img_data))
+                    # Rasmni shu qator, birinchi ustunga joylashtiramiz
+                    image.anchor = f"A{ws.max_row}"
+                    ws.add_image(image)
+                except Exception as e:
+                    print(f"Rasm qo'shishda xatolik: {e}")
+
+        # ustun kengligi
+        ws.column_dimensions['B'].width = 20
+        ws.column_dimensions['C'].width = 20
+        ws.row_dimensions[1].height = 30  # header uchun
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename=ijarachilar.xlsx'
+        wb.save(response)
+        return response
+
+    # ======================
+    # PDF eksport
+    # ======================
+    @action(detail=False, methods=['get'], url_path='export-pdf')
+    def export_pdf(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        elements = []
+
+        styles = getSampleStyleSheet()
+        title_style = styles['Heading1']
+        normal_style = styles['Normal']
+
+        # Title
+        elements.append(Paragraph("Ijarachilar Ro'yxati", title_style))
+        elements.append(Spacer(1, 20))
+
+        # Jadval sarlavhalari
+        data = [["ID", "Logo", "Ism", "Kontakt raqam"]]
+
+        for ijarachi in queryset:
+            # Logo rasmi
+            if ijarachi.logo and os.path.exists(ijarachi.logo.path):
+                try:
+                    img = Image(ijarachi.logo.path, width=40, height=40)
+                except Exception:
+                    img = ""
+            else:
+                img = ""
+
+            row = [
+                str(ijarachi.id),
+                img,
+                ijarachi.name,
+                ijarachi.contact_number or ""
+            ]
+            data.append(row)
+
+        # Jadval
+        table = Table(data, colWidths=[40, 50, 200, 120])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ]))
+
+        elements.append(table)
+        doc.build(elements)
+
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="ijarachilar.pdf"'
+        return response
+
+
+
+
+def generate_pdf_detail(filename, title, data_list):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    # Report title
+    elements.append(Paragraph(title, styles['Title']))
+    elements.append(Spacer(1, 12))
+
+    for idx, item in enumerate(data_list, start=1):
+        elements.append(Paragraph(f"Reklama #{idx}", styles['Heading2']))
+        elements.append(Spacer(1, 6))
+
+        # Rasm
+        if item.get("image") and os.path.exists(item["image"].replace("/media/", "media/")):
+            try:
+                img_path = item["image"].replace("/media/", "media/")
+                elements.append(Image(img_path, width=3*inch, height=2*inch))
+                elements.append(Spacer(1, 12))
+            except Exception:
+                elements.append(Paragraph("Rasm yuklanmadi", styles['Normal']))
+        else:
+            elements.append(Paragraph("Rasm yuklanmadi", styles['Normal']))
+
+        # Table
+        table_data = []
+        for key, value in item.items():
+            if key == "image":
+                continue
+            table_data.append([key, str(value)])
+
+        table = Table(table_data, colWidths=[150, 300])
+        table.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ]))
+        elements.append(table)
+        elements.append(Spacer(1, 20))
+
+    doc.build(elements)
+    buffer.seek(0)
+
+    response = HttpResponse(buffer, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{filename}.pdf"'
+    return response
 
 
 class AdvertisementViewSet(viewsets.ModelViewSet):
@@ -391,7 +549,7 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
         ws.title = "Advertisements"
 
         headers = [
-             "Reklama nomi", "Qurilma turi", "Ijarachi",
+            "Reklama nomi", "Qurilma turi", "Ijarachi",
             "Shartnoma raqami", "Shartnoma boshlanishi", "Shartnoma tugashi",
             "O'lchov birligi", "Qurilma narxi", "Egallagan maydon", "Shartnoma summasi",
             "Position", "Station", "Line", "Contact number", "Created at", "Created by"
@@ -402,7 +560,7 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
             row = [
                 ad.Reklama_nomi,
                 ad.Qurilma_turi,
-                ad.Ijarachi,
+                str(ad.Ijarachi) if ad.Ijarachi else "",
                 ad.Shartnoma_raqami,
                 ad.Shartnoma_muddati_boshlanishi.strftime("%Y-%m-%d") if ad.Shartnoma_muddati_boshlanishi else "",
                 ad.Shartnoma_tugashi.strftime("%Y-%m-%d") if ad.Shartnoma_tugashi else "",
@@ -413,13 +571,13 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
                 ad.position.number if ad.position else "",
                 ad.position.station.name if ad.position and ad.position.station else "",
                 ad.position.station.line.name if ad.position and ad.position.station and ad.position.station.line else "",
-                ad.contact_number,
-                ad.user.username if ad.user else "",
+                ad.Ijarachi.contact_number if ad.Ijarachi and hasattr(ad.Ijarachi, "contact_number") else "",
                 ad.created_at.strftime("%Y-%m-%d %H:%M:%S") if ad.created_at else "",
+                ad.user.username if ad.user else "",
             ]
             ws.append(row)
 
-        # Column width optimize
+        # Ustunlarni avtomatik kengaytirish
         for i, column in enumerate(ws.columns, start=1):
             max_length = max((len(str(cell.value)) for cell in column if cell.value), default=0)
             ws.column_dimensions[get_column_letter(i)].width = max_length + 2
@@ -430,7 +588,6 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = 'attachment; filename=advertisements.xlsx'
         wb.save(response)
         return response
-    
 
     @action(detail=False, methods=['get'], url_path='export-pdf')
     def export_pdf(self, request):
@@ -442,7 +599,7 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
                 "image": ad.photo.url if ad.photo else "",
                 "Reklama nomi": ad.Reklama_nomi,
                 "Qurilma turi": ad.Qurilma_turi,
-                "Ijarachi": ad.Ijarachi,
+                "Ijarachi": str(ad.Ijarachi) if ad.Ijarachi else "",
                 "Shartnoma raqami": ad.Shartnoma_raqami,
                 "Shartnoma boshlanishi": ad.Shartnoma_muddati_boshlanishi.strftime("%Y-%m-%d") if ad.Shartnoma_muddati_boshlanishi else "",
                 "Shartnoma tugashi": ad.Shartnoma_tugashi.strftime("%Y-%m-%d") if ad.Shartnoma_tugashi else "",
@@ -453,13 +610,12 @@ class AdvertisementViewSet(viewsets.ModelViewSet):
                 "Joyi": ad.position.number if ad.position else "",
                 "Bekati": ad.position.station.name if ad.position and ad.position.station else "",
                 "Liniyasi": ad.position.station.line.name if ad.position and ad.position.station and ad.position.station.line else "",
-                "Bog'lanish raqami": ad.contact_number,
+                "Bog'lanish raqami": ad.Ijarachi.contact_number if ad.Ijarachi and hasattr(ad.Ijarachi, "contact_number") else "",
                 "Yaratilgan vaqti": ad.created_at.strftime("%Y-%m-%d %H:%M:%S") if ad.created_at else "",
-                "kim tomonidan": ad.user.username if ad.user else "",
+                "Kim tomonidan": ad.user.username if ad.user else "",
             })
 
         return generate_pdf_detail("advertisements", "Advertisements Report", data_list)
-
 
 class AdvertisementArchiveViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AdvertisementArchive.objects.all().order_by('-created_at')
@@ -470,6 +626,7 @@ class AdvertisementArchiveViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ['created_at', 'Qurilma_narxi']
     filterset_fields = ['line','station', 'position']
     pagination_class = CustomPagination
+
 
     @action(detail=False, methods=['get'], url_path='export-excel')
     def export_excel(self, request):
@@ -483,7 +640,7 @@ class AdvertisementArchiveViewSet(viewsets.ReadOnlyModelViewSet):
             "Reklama nomi", "Qurilma turi", "Ijarachi",
             "Shartnoma raqami", "Shartnoma boshlanishi", "Shartnoma tugashi",
             "O'lchov birligi", "Qurilma narxi", "Egallagan maydon", "Shartnoma summasi",
-            "Position", "Station", "Line", "User", "Created at", "Created by"
+            "Position", "Station", "Line", "Contact number", "Created at", "Created by"
         ]
         ws.append(headers)
 
@@ -491,7 +648,7 @@ class AdvertisementArchiveViewSet(viewsets.ReadOnlyModelViewSet):
             row = [
                 ad.Reklama_nomi,
                 ad.Qurilma_turi,
-                ad.Ijarachi,
+                str(ad.Ijarachi) if ad.Ijarachi else "",
                 ad.Shartnoma_raqami,
                 ad.Shartnoma_muddati_boshlanishi.strftime("%Y-%m-%d") if ad.Shartnoma_muddati_boshlanishi else "",
                 ad.Shartnoma_tugashi.strftime("%Y-%m-%d") if ad.Shartnoma_tugashi else "",
@@ -502,13 +659,13 @@ class AdvertisementArchiveViewSet(viewsets.ReadOnlyModelViewSet):
                 ad.position.number if ad.position else "",
                 ad.position.station.name if ad.position and ad.position.station else "",
                 ad.position.station.line.name if ad.position and ad.position.station and ad.position.station.line else "",
-                ad.contact_number,
+                ad.Ijarachi.contact_number if ad.Ijarachi and hasattr(ad.Ijarachi, "contact_number") else "",
                 ad.created_at.strftime("%Y-%m-%d %H:%M:%S") if ad.created_at else "",
                 ad.user.username if ad.user else "",
             ]
-
             ws.append(row)
 
+        # ustun kengligi
         for i, column in enumerate(ws.columns, start=1):
             max_length = max((len(str(cell.value)) for cell in column if cell.value), default=0)
             ws.column_dimensions[get_column_letter(i)].width = max_length + 2
@@ -531,7 +688,7 @@ class AdvertisementArchiveViewSet(viewsets.ReadOnlyModelViewSet):
                 "image": ad.photo.url if ad.photo else "",
                 "Reklama nomi": ad.Reklama_nomi,
                 "Qurilma turi": ad.Qurilma_turi,
-                "Ijarachi": ad.Ijarachi,
+                "Ijarachi": str(ad.Ijarachi) if ad.Ijarachi else "",
                 "Shartnoma raqami": ad.Shartnoma_raqami,
                 "Shartnoma boshlanishi": ad.Shartnoma_muddati_boshlanishi.strftime("%Y-%m-%d") if ad.Shartnoma_muddati_boshlanishi else "",
                 "Shartnoma tugashi": ad.Shartnoma_tugashi.strftime("%Y-%m-%d") if ad.Shartnoma_tugashi else "",
@@ -542,12 +699,12 @@ class AdvertisementArchiveViewSet(viewsets.ReadOnlyModelViewSet):
                 "Joyi": ad.position.number if ad.position else "",
                 "Bekati": ad.position.station.name if ad.position and ad.position.station else "",
                 "Liniyasi": ad.position.station.line.name if ad.position and ad.position.station and ad.position.station.line else "",
-                "Bog'lanish raqami": ad.contact_number,
+                "Bog'lanish raqami": ad.Ijarachi.contact_number if ad.Ijarachi and hasattr(ad.Ijarachi, "contact_number") else "",
                 "Yaratilgan vaqti": ad.created_at.strftime("%Y-%m-%d %H:%M:%S") if ad.created_at else "",
                 "kim tomonidan": ad.user.username if ad.user else "",
             })
 
-        return generate_pdf_detail("advertisements", "Advertisements Report", data_list)
+        return generate_pdf_detail("archive_advertisements", "Advertisements Report", data_list)
 
 
 class ExpiredAdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
@@ -686,7 +843,6 @@ class AllAdvertisementsViewSet(viewsets.ReadOnlyModelViewSet):
 
     pagination_class = CustomPagination
 
-
     @extend_schema(
         parameters=[
             OpenApiParameter(name="search", description="Qidiruv uchun matn", required=False, type=str),
@@ -715,7 +871,7 @@ class AllAdvertisementsViewSet(viewsets.ReadOnlyModelViewSet):
             ws.append([
                 ad.Reklama_nomi,
                 ad.Qurilma_turi,
-                ad.Ijarachi,
+                str(ad.Ijarachi) if ad.Ijarachi else "",
                 ad.Shartnoma_raqami,
                 ad.Shartnoma_muddati_boshlanishi.strftime("%Y-%m-%d") if ad.Shartnoma_muddati_boshlanishi else "",
                 ad.Shartnoma_tugashi.strftime("%Y-%m-%d") if ad.Shartnoma_tugashi else "",
@@ -726,7 +882,7 @@ class AllAdvertisementsViewSet(viewsets.ReadOnlyModelViewSet):
                 ad.position.number if ad.position else "",
                 ad.position.station.name if ad.position and ad.position.station else "",
                 ad.position.station.line.name if ad.position and ad.position.station and ad.position.station.line else "",
-                ad.contact_number,
+                ad.Ijarachi.contact_number if ad.Ijarachi and hasattr(ad.Ijarachi, "contact_number") else "",
                 ad.created_at.strftime("%Y-%m-%d %H:%M:%S") if ad.created_at else "",
                 ad.user.username if ad.user else "",
             ])
@@ -754,7 +910,7 @@ class AllAdvertisementsViewSet(viewsets.ReadOnlyModelViewSet):
                 "image": ad.photo.url if ad.photo else "",
                 "Reklama nomi": ad.Reklama_nomi,
                 "Qurilma turi": ad.Qurilma_turi,
-                "Ijarachi": ad.Ijarachi,
+                "Ijarachi": str(ad.Ijarachi) if ad.Ijarachi else "",
                 "Shartnoma raqami": ad.Shartnoma_raqami,
                 "Shartnoma boshlanishi": ad.Shartnoma_muddati_boshlanishi.strftime("%Y-%m-%d") if ad.Shartnoma_muddati_boshlanishi else "",
                 "Shartnoma tugashi": ad.Shartnoma_tugashi.strftime("%Y-%m-%d") if ad.Shartnoma_tugashi else "",
@@ -765,13 +921,12 @@ class AllAdvertisementsViewSet(viewsets.ReadOnlyModelViewSet):
                 "Joyi": ad.position.number if ad.position else "",
                 "Bekati": ad.position.station.name if ad.position and ad.position.station else "",
                 "Liniyasi": ad.position.station.line.name if ad.position and ad.position.station and ad.position.station.line else "",
-                "Bog'lanish raqami": ad.contact_number,
+                "Bog'lanish raqami": ad.Ijarachi.contact_number if ad.Ijarachi and hasattr(ad.Ijarachi, "contact_number") else "",
                 "Yaratilgan vaqti": ad.created_at.strftime("%Y-%m-%d %H:%M:%S") if ad.created_at else "",
                 "kim tomonidan": ad.user.username if ad.user else "",
             })
 
-        return generate_pdf_detail("advertisements", "Advertisements Report", data_list)
-
+        return generate_pdf_detail("all_advertisements", "Advertisements Report", data_list)
 
 
 
