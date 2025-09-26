@@ -1025,3 +1025,5 @@ class StatisticsCountAPI(APIView):
 
         }
         return Response(data)
+    
+    

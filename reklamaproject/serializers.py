@@ -20,10 +20,27 @@ class StationSerializer(serializers.ModelSerializer):
 
 
 
+
+class AdvertisementNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Advertisement
+        fields = [
+            "id", "Reklama_nomi", "Qurilma_turi", "Shartnoma_raqami",
+            "Shartnoma_muddati_boshlanishi", "Shartnoma_tugashi",
+            "O_lchov_birligi", "Qurilma_narxi", "Egallagan_maydon",
+            "Shartnoma_summasi", "position", "created_at"
+        ]
+
+
+
 class IjarachiSerializers(serializers.ModelSerializer):
+    reklamalari = AdvertisementNestedSerializer(source="advertisement_set", many=True, read_only=True)
+    
+    
+    
     class Meta:
         model = Ijarachi
-        fields = ['id', 'name',"logo", "contact_number"]
+        fields = ['id', 'name',"logo", "contact_number", "reklamalari"]
 
 
 
