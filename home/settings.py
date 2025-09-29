@@ -82,6 +82,7 @@ CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[
     "https://reklama-project.onrender.com",
     "https://marketing-metro-official.vercel.app",
     "https://marketing.tm1.uz",
+    "https://abbos.tm1.uz",
 ])
 CORS_ALLOW_CREDENTIALS = True
 
@@ -98,6 +99,7 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[
     "https://reklama-project.onrender.com",
     "https://marketing-metro-official.vercel.app",
     "https://marketing.tm1.uz",
+    "https://abbos.tm1.uz",
 ])
 
 # --- URL ---
