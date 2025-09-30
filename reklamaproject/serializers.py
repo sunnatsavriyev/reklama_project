@@ -65,6 +65,7 @@ class AdvertisementSerializer(serializers.ModelSerializer):
     ijarachi = IjarachiSerializers(source="Ijarachi", read_only=True)
     ijarachi_contact = serializers.CharField(source="Ijarachi.contact_number", read_only=True)
     ijarachi_logo = serializers.ImageField(source="Ijarachi.logo", read_only=True)
+    ijarachi_name = serializers.CharField(source="Ijarachi.name", read_only=True)
 
     class Meta:
         model = Advertisement
@@ -75,6 +76,7 @@ class AdvertisementSerializer(serializers.ModelSerializer):
             'Ijarachi',          # id bilan yuboriladi
             'ijarachi',          # nested obyekt (name, contact_number, logo)
             'ijarachi_contact',
+            'ijarachi_name',
             'ijarachi_logo', 
             'Shartnoma_raqami',
             'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi',
@@ -84,6 +86,23 @@ class AdvertisementSerializer(serializers.ModelSerializer):
             'created_by',
         ]
         read_only_fields = ['user']
+        
+        
+        
+    def get_ijarachi(self, obj):
+        if obj.Ijarachi:
+            return obj.Ijarachi.name
+        return None
+    
+    def get_ijarachi_contact(self, obj):
+        if obj.Ijarachi:
+            return obj.Ijarachi.contact_number
+        return None
+    
+    def get_ijarachi_logo(self, obj):
+        if obj.Ijarachi:
+            return obj.Ijarachi.logo
+        return None
 
     def get_station(self, obj):
         if obj.position and obj.position.station:
@@ -184,10 +203,29 @@ class AdvertisementArchiveSerializer(serializers.ModelSerializer):
 
     # GET javobida esa to‘liq Ijarachi obyektini qaytaradi
     ijarachi = IjarachiSerializers(source='Ijarachi', read_only=True)
+    ijarachi_contact = serializers.CharField(source='Ijarachi.contact_number', read_only=True)
+    ijarachi_logo = serializers.ImageField(source='Ijarachi.logo', read_only=True)  
+    ijarachi_name = serializers.CharField(source='Ijarachi.name', read_only=True)
 
     class Meta:
         model = AdvertisementArchive
         fields = '__all__'
+        
+        
+    def get_ijarachi(self, obj):
+        if obj.Ijarachi:
+            return obj.Ijarachi.name
+        return None
+    
+    def get_ijarachi_contact(self, obj):
+        if obj.Ijarachi:
+            return obj.Ijarachi.contact_number
+        return None
+    
+    def get_ijarachi_logo(self, obj):
+        if obj.Ijarachi:
+            return obj.Ijarachi.logo
+        return None
 
     def get_station_name(self, obj):
         try:

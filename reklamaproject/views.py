@@ -14,8 +14,9 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-import openpyxl
+from openpyxl.drawing.image import Image as XLImage
 from openpyxl.utils import get_column_letter
+import openpyxl
 from django.http import HttpResponse
 from datetime import date, timedelta
 from django.db.models import Q
