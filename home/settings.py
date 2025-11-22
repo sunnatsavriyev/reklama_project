@@ -86,6 +86,7 @@ CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[
     "https://abbos.tm1.uz",
     "http://88.88.150.151:9000",
     "http://88.88.150.150:5173",
+    'https://reklama-project-0r66.onrender.com',
 
 ])
 CORS_ALLOW_CREDENTIALS = True
@@ -106,6 +107,7 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[
     "https://abbos.tm1.uz",
     "http://88.88.150.151:9000",
     "http://88.88.150.150:5173",
+    'https://reklama-project-0r66.onrender.com',
 ])
 
 # --- URL ---
