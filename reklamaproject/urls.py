@@ -2,7 +2,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (MetroLineViewSet, StationViewSet, PositionViewSet, AdvertisementViewSet, AdvertisementArchiveViewSet, Last10AdvertisementImagesView, 
         get_me, ExpiredAdvertisementViewSet, Stationimage, AllAdvertisementsViewSet, CheckAuthView, IjarachiViewSet,TuriViewSet,ShartnomaSummasiViewSet,
         AdvertisementStatisticsView,StatisticsCountAPI, AdvertisementStatisticsViewSet, IjarachiStatisticsViewSet, IjarachiSumStatisticsViewSet,TarkibAdvertisementArchiveViewSet,
-    TarkibExpiredAdvertisementViewSet,DepoViewSet,TarkibAdvertisementViewSet,TarkibPositionViewSet,Tarkibimage,TarkibViewSet,TarkibShardnomaSummasiViewSet
+    TarkibExpiredAdvertisementViewSet,DepoViewSet,TarkibAdvertisementViewSet,TarkibPositionViewSet,TarkibAllAdvertisementViewSet,TarkibViewSet,TarkibShardnomaSummasiViewSet
 )
 from django.urls import path
 router = DefaultRouter()
@@ -25,6 +25,9 @@ router.register('tarkib-shartnoma-summalari', TarkibShardnomaSummasiViewSet, bas
 router.register(r'advertisements/statistics-viewset', AdvertisementStatisticsViewSet, basename='advertisement-statistics-viewset')
 router.register(r'ijarachilar/statistics', IjarachiStatisticsViewSet, basename='ijarachi-statistics')
 router.register(r'ijarachilar/sum-statistics', IjarachiSumStatisticsViewSet, basename='ijarachi-sum-statistics')
+router.register(r'tarkib-advertisement-tugashi', TarkibExpiredAdvertisementViewSet, basename='tarkib-advertisement-tugashi')
+router.register(r'all-tarkib-advertisements', TarkibAllAdvertisementViewSet, basename='all-tarkib-advertisements')
+
 
 urlpatterns =  [
     path("advertisements/statistics/", AdvertisementStatisticsView.as_view(), name="advertisement-statistics"),

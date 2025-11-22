@@ -2062,3 +2062,124 @@ class TarkibExpiredAdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
                 "haftada_tugaydigan": self.get_serializer(expiring_soon, many=True).data,
             }
         })
+
+
+
+
+class TarkibAllAdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Read-only viewset for all Tarkib Advertisements (Depo/Harakat tarkibi based)
+    """
+    queryset = TarkibAdvertisement.objects.select_related(
+        'position', 'position__harakat_tarkibi', 'position__harakat_tarkibi__depo',
+        'Ijarachi', 'user', 'Qurilma_turi'
+    ).prefetch_related('tarkibtolovlar').all().order_by('-id')
+
+    serializer_class = TarkibAdvertisementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    search_fields = ['Reklama_nomi', 'Shartnoma_raqami']
+    ordering_fields = ['Qurilma_narxi']
+    filterset_fields = ['position', 'Ijarachi', 'position__harakat_tarkibi', 'position__harakat_tarkibi__depo']
+
+    # ===== EXCEL EXPORT =====
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="search", description="Qidiruv matni", required=False, type=str),
+            OpenApiParameter(name="Ijarachi", description="Ijarachi bo‘yicha filter", required=False, type=str),
+            OpenApiParameter(name="Shartnoma_raqami", description="Shartnoma raqami bo‘yicha filter", required=False, type=str),
+        ],
+        responses={200: 'Excel fayl'}
+    )
+    @action(detail=False, methods=['get'], url_path='export-excel')
+    def export_excel(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Tarkib Advertisements"
+
+        headers = [
+            "Reklama nomi", "Qurilma turi", "Ijarachi",
+            "Shartnoma raqami", "Shartnoma boshlanishi", "Shartnoma tugashi",
+            "O'lchov birligi", "Qurilma narxi", "Egallagan maydon", "Shartnoma summasi",
+            "Position", "Harakat tarkibi", "Depo", "Contact number", "Created at", "Created by", "Jami to'lov"
+        ]
+        ws.append(headers)
+
+        for ad in queryset:
+            ws.append([
+                ad.Reklama_nomi,
+                str(ad.Qurilma_turi) if ad.Qurilma_turi else "",
+                str(ad.Ijarachi) if ad.Ijarachi else "",
+                ad.Shartnoma_raqami,
+                ad.Shartnoma_muddati_boshlanishi.strftime("%d-%m-%Y") if ad.Shartnoma_muddati_boshlanishi else "",
+                ad.Shartnoma_tugashi.strftime("%d-%m-%Y") if ad.Shartnoma_tugashi else "",
+                ad.O_lchov_birligi,
+                float(ad.Qurilma_narxi) if ad.Qurilma_narxi else 0,
+                ad.Egallagan_maydon,
+                float(ad.Shartnoma_summasi) if ad.Shartnoma_summasi else 0,
+                ad.position.position if ad.position else "",
+                ad.position.harakat_tarkibi.tarkib if ad.position and ad.position.harakat_tarkibi else "",
+                ad.position.harakat_tarkibi.depo.nomi if ad.position and ad.position.harakat_tarkibi and ad.position.harakat_tarkibi.depo else "",
+                ad.Ijarachi.contact_number if ad.Ijarachi and hasattr(ad.Ijarachi, "contact_number") else "",
+                ad.created_at.strftime("%d-%m-%Y %H:%M:%S") if ad.created_at else "",
+                ad.user.username if ad.user else "",
+                float(sum(t.Shartnomasummasi for t in ad.tarkibtolovlar.all()))
+            ])
+
+        for i, column in enumerate(ws.columns, start=1):
+            max_length = max((len(str(cell.value)) for cell in column if cell.value), default=0)
+            ws.column_dimensions[get_column_letter(i)].width = max_length + 2
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename=tarkib_all_advertisements.xlsx'
+        wb.save(response)
+        return response
+
+    # ===== PDF EXPORT =====
+    @action(detail=False, methods=['get'], url_path='export-pdf')
+    def export_pdf(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        elements.append(Paragraph("<b>Tarkib Advertisements Report</b>", styles['Title']))
+        elements.append(Spacer(1, 12))
+
+        for ad in queryset:
+            data = [
+                ["Reklama nomi", ad.Reklama_nomi],
+                ["Qurilma turi", str(ad.Qurilma_turi) if ad.Qurilma_turi else ""],
+                ["Ijarachi", str(ad.Ijarachi) if ad.Ijarachi else ""],
+                ["Shartnoma raqami", ad.Shartnoma_raqami],
+                ["Shartnoma boshlanishi", ad.Shartnoma_muddati_boshlanishi.strftime("%d-%m-%Y") if ad.Shartnoma_muddati_boshlanishi else ""],
+                ["Shartnoma tugashi", ad.Shartnoma_tugashi.strftime("%d-%m-%Y") if ad.Shartnoma_tugashi else ""],
+                ["O'lchov birligi", ad.O_lchov_birligi],
+                ["Qurilma narxi", ad.Qurilma_narxi],
+                ["Egallagan maydon", ad.Egallagan_maydon],
+                ["Shartnoma summasi", ad.Shartnoma_summasi],
+                ["Position", ad.position.position if ad.position else ""],
+                ["Harakat tarkibi", ad.position.harakat_tarkibi.tarkib if ad.position and ad.position.harakat_tarkibi else ""],
+                ["Depo", ad.position.harakat_tarkibi.depo.nomi if ad.position and ad.position.harakat_tarkibi and ad.position.harakat_tarkibi.depo else ""],
+                ["Contact number", ad.Ijarachi.contact_number if ad.Ijarachi and hasattr(ad.Ijarachi, "contact_number") else ""],
+                ["Created at", ad.created_at.strftime("%d-%m-%Y %H:%M:%S") if ad.created_at else ""],
+                ["Created by", ad.user.username if ad.user else ""],
+                ["Jami to'lov", float(sum(t.Shartnomasummasi for t in ad.tarkibtolovlar.all()))]
+            ]
+            table = Table(data, colWidths=[150, 350])
+            table.setStyle(TableStyle([
+                ("GRID", (0,0), (-1,-1), 0.5, colors.grey),
+                ("BACKGROUND", (0,0), (0,-1), colors.whitesmoke),
+                ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ]))
+            elements.append(table)
+            elements.append(Spacer(1, 20))
+
+        doc.build(elements)
+        buffer.seek(0)
+        return FileResponse(buffer, as_attachment=True, filename="tarkib_all_advertisements.pdf")
