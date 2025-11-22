@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
-from .models import MetroLine, Station, Position, Advertisement, AdvertisementArchive, Ijarachi
+from .models import MetroLine, Station, Position, Advertisement, AdvertisementArchive, Ijarachi,TarkibShartnomaSummasi, Turi, ShartnomaSummasi,HarakatTarkibi, TarkibPosition, TarkibAdvertisement, TarkibAdvertisementArchive,Depo
 
 @admin.register(MetroLine)
 class MetroLineAdmin(admin.ModelAdmin):
@@ -48,6 +48,22 @@ class IjarachiAdmin(admin.ModelAdmin):
     logo_display.short_description = "Logo"
 
 
+
+@admin.register(ShartnomaSummasi)
+class ShartnomaSummasiAdmin(admin.ModelAdmin):
+    list_display = ['id', 'Shartnomasummasi', 'comment','created_at']
+    search_fields = ['Shartnomasummasi']
+    verbose_name = _("Shartnomasummasi")
+    verbose_name_plural = _("Shartnomasummalari")
+
+
+
+@admin.register(Turi)
+class TuriAdmin(admin.ModelAdmin):
+    list_display = ['id', 'qurilmaturi']
+    search_fields = ['qurilmaturi']
+    verbose_name = _(" qurilmaturi")
+    verbose_name_plural = _("Qurilma turlari")
 
 
 @admin.register(Advertisement)
@@ -110,3 +126,104 @@ class AdvertisementArchiveAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return True
+    
+ 
+ 
+@admin.register(Depo)
+class DepoAdmin(admin.ModelAdmin):
+    list_display = ['id', 'nomi']
+    search_fields = ['nomi']
+    verbose_name = _("Depo")
+    verbose_name_plural = _("Depolar")
+    
+    
+@admin.register(HarakatTarkibi)
+class HarakatTarkibiAdmin(admin.ModelAdmin):
+    list_display = ['id', 'tarkib', 'depo']
+    search_fields = ['tarkib', 'depo__nomi']
+    list_filter = ['depo']
+    verbose_name = _("Harakat tarkibi")
+    verbose_name_plural = _("Harakat tarkiblari")
+
+
+@admin.register(TarkibPosition)
+class TarkibPositionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'harakat_tarkibi', 'position']
+    search_fields = ['haraka_tarkibi__tarkib', 'position']
+    list_filter = ['harakat_tarkibi']
+    verbose_name = _("Tarkib pozitsiyasi")
+    verbose_name_plural = _("Tarkib pozitsiyalari")
+
+
+
+@admin.register(TarkibShartnomaSummasi)
+class TarkibShardnomaSummasiAdmin(admin.ModelAdmin):
+    list_display = ['id', 'Shartnomasummasi', 'reklama','comment']
+    search_fields = ['reklama__Reklama_nomi', 'Shartnomasummasi']
+    verbose_name = _("Harakat tarkibi shartnoma summasi")
+    verbose_name_plural = _("Harakat tarkibi shartnoma summalari")
+
+
+
+@admin.register(TarkibAdvertisement)
+class TarkibAdvertisementAdmin(admin.ModelAdmin):
+    list_display = [
+        'Reklama_nomi', 'get_ijarachi_name', 'get_ijarachi_contact',
+        'get_position', 'Qurilma_turi',
+        'Shartnoma_raqami', 'Shartnoma_muddati_boshlanishi',
+        'Shartnoma_tugashi', 'O_lchov_birligi',
+        'Qurilma_narxi', 'Egallagan_maydon', 'Shartnoma_summasi',
+        'Shartnoma_fayl',
+    ]
+    list_filter = ['Ijarachi', 'Qurilma_turi', 'position__harakat_tarkibi']
+    search_fields = ['Reklama_nomi', 'Shartnoma_raqami', 'Ijarachi__name']
+    verbose_name = _("Harakat tarkibi reklama")
+    verbose_name_plural = _("Harakat tarkibi reklamalar")
+
+    @admin.display(description=_("Pozitsiya"))
+    def get_position(self, obj):
+        if obj.position:
+            return str(obj.position)
+        return "-"
+
+    @admin.display(description=_("Ijarachi nomi"))
+    def get_ijarachi_name(self, obj):
+        return obj.Ijarachi.name if obj.Ijarachi else "-"
+
+    @admin.display(description=_("Ijarachi telefon"))
+    def get_ijarachi_contact(self, obj):
+        return obj.Ijarachi.contact_number if obj.Ijarachi else "-"
+
+
+@admin.register(TarkibAdvertisementArchive)
+class TarkibAdvertisementArchiveAdmin(admin.ModelAdmin):
+    list_display = [
+        'Reklama_nomi', 'Qurilma_turi', 'Shartnoma_raqami',
+        'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi',
+        'O_lchov_birligi', 'Qurilma_narxi',
+        'Shartnoma_summasi', 'Shartnoma_fayl',
+        'user', 'created_at'
+    ]
+    search_fields = ['Reklama_nomi', 'Shartnoma_raqami']
+    list_filter = ['created_at', 'user', 'depo']
+    readonly_fields = [
+        'original_ad', 'user', 'depo', 'tarkib', 'position',
+        'Reklama_nomi', 'Qurilma_turi', 'Ijarachi',
+        'Shartnoma_raqami',
+        'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi',
+        'O_lchov_birligi', 'Qurilma_narxi',
+        'Egallagan_maydon', 'Shartnoma_summasi', 'Shartnoma_fayl',
+        'photo', 'created_at'
+    ]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return True
+
+    
+    

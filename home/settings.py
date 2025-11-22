@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 
     # Swagger
     'drf_spectacular',
+    'drf_yasg',
 
     # Security
     'axes',
@@ -83,6 +84,9 @@ CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[
     "https://marketing-metro-official.vercel.app",
     "https://marketing.tm1.uz",
     "https://abbos.tm1.uz",
+    "http://88.88.150.151:9000",
+    "http://88.88.150.150:5173",
+
 ])
 CORS_ALLOW_CREDENTIALS = True
 
@@ -100,6 +104,8 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[
     "https://marketing-metro-official.vercel.app",
     "https://marketing.tm1.uz",
     "https://abbos.tm1.uz",
+    "http://88.88.150.151:9000",
+    "http://88.88.150.150:5173",
 ])
 
 # --- URL ---
