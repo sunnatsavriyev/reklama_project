@@ -73,12 +73,18 @@ class TarkibPosition(models.Model):
         on_delete=models.CASCADE, 
         related_name='tarkib_positions'
     )
-    position = models.CharField(max_length=100, help_text="Pozitsiya raqami, masalan: 1, 2, 3")
+    position = models.CharField(max_length=100, help_text="Pozitsiya raqami, masalan: 1, 2, 3",)
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True
     )
 
     created_at = models.DateTimeField( default=timezone.now)
+    
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['harakat_tarkibi', 'position'], name='unique_position_per_tarkib')
+        ]
 
     def __str__(self):
         return f"{self.harakat_tarkibi.tarkib} - Pozitsiya #{self.position}"

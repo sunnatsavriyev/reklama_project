@@ -4,8 +4,8 @@ from .models import MetroLine, Station, Position, Advertisement, AdvertisementAr
 from .serializers import (
     MetroLineSerializer, StationSerializer,
     PositionSerializer, AdvertisementSerializer, AdvertisementArchiveSerializer, 
-    CreateAdvertisementSerializer, ExportAdvertisementSerializer,AdvertisementStatisticsSerializer,TarkibAdvertisementArchiveShartnomaSummasiSerializer,
-    IjarachiSerializers, TuriSerializer, ShartnomaSummasiSerializer, UpdateAdvertisementSerializer,TarkibShartnomaSummasiSerializer,
+    CreateAdvertisementSerializer, ExportAdvertisementSerializer,AdvertisementStatisticsSerializer,
+    IjarachiSerializers, TuriSerializer, ShartnomaSummasiSerializer, UpdateAdvertisementSerializer,TarkibShartnomaSummasiSerializer,IjarachiUnifiedStatisticsQuerySerializer,
      TarkibAdvertisementSerializer, TarkibAdvertisementArchiveSerializer,CreateTarkibAdvertisementSerializer,UpdateTarkibAdvertisementSerializer,TarkibPositionSerializer, DepoSerializer, HarakatTarkibiSerializer
 )
 from .pagination import CustomPagination
@@ -32,12 +32,14 @@ import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer,HRFlowable, Image, PageBreak
+from reportlab.lib.pagesizes import A4, landscape, A3
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer,HRFlowable, Image, PageBreak,LongTable
 from reportlab.graphics.shapes import Drawing, String
 from reportlab.graphics.charts.barcharts import HorizontalBarChart, VerticalBarChart
 from reportlab.lib import colors
 import io
+# from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from reportlab.lib.styles import getSampleStyleSheet
 import requests
 from django.utils.timezone import now
@@ -50,6 +52,7 @@ from datetime import datetime
 from reportlab.lib.styles import ParagraphStyle
 from decimal import Decimal
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
+
 class XLSXRenderer(BaseRenderer):
     media_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     format = 'xlsx'
@@ -1067,42 +1070,53 @@ class ShartnomaSummasiViewSet(viewsets.ModelViewSet):
 class AdvertisementStatisticsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-
-
     @extend_schema(
-        responses={
-            200: AdvertisementStatisticsSerializer
-        }
+        responses={200: AdvertisementStatisticsSerializer}
     )
-    
     def get(self, request):
-        today = now().date()
-        first_day_this_month = today.replace(day=1)
+        # Top 5 reklama (tolovlari asosida)
+        top_5_ads = Advertisement.objects.annotate(
+            paid_sum=Sum('tolovlar__Shartnomasummasi')
+        ).filter(paid_sum__gt=0).order_by('-paid_sum')[:5]
 
-        top_5_ads = Advertisement.objects.order_by("-Shartnoma_summasi")[:5]
-        last_10_ads = Advertisement.objects.order_by("-created_at")[:10]
+        # Oxirgi 10 reklama
+        last_10_ads = Advertisement.objects.order_by('-created_at')[:10]
 
+        # Barcha reklama (stansiyadagi pozitsiyalar)
+        station_ads = Advertisement.objects.filter(position__isnull=False)
 
-        total_count = Advertisement.objects.count()
+        total_count = station_ads.count()
 
-        top_5_stations = (
-            Advertisement.objects.values("position__station__name")
-            .annotate(total=Count("id"))
-            .order_by("-total")[:10]
-        )
-        hamkor_tashkilot_soni = Advertisement.objects.values("Ijarachi").distinct().count()
-        reklamadan_tushadigan_umumiy_summa = Advertisement.objects.aggregate(total=Sum("Shartnoma_summasi"))["total"] or 0
+        # Top 10 stansiyalar
+        top_5_stations = station_ads.values('position__station__name').annotate(
+            total=Count('id')
+        ).order_by('-total')[:10]
+
+        # Hamkor tashkilotlar soni (stansiyadagi reklamalar orqali)
+        hamkor_tashkilot_soni = station_ads.filter(Ijarachi__isnull=False).values('Ijarachi').distinct().count()
+
+        # To‘langan summalarning umumiy miqdori
+        # 1. Stationlardagi Advertisement.tolovlar
+        ad_paid_sum = Advertisement.objects.aggregate(
+            total=Sum('tolovlar__Shartnomasummasi')
+        )['total'] or 0
+
+        # 2. TarkibAdvertisement.tarkibtolovlar
+        tarkib_paid_sum = TarkibAdvertisement.objects.aggregate(
+            total=Sum('tarkibtolovlar__Shartnomasummasi')
+        )['total'] or 0
+
+        reklamadan_tushadigan_umumiy_summa = ad_paid_sum + tarkib_paid_sum
 
         serializer = AdvertisementStatisticsSerializer({
             "top_5_ads": top_5_ads,
             "last_10_ads": last_10_ads,
             "top_5_stations": list(top_5_stations),
-            "counts": [ 
-                {"name": "total_count", "value": total_count, "color": "barcha reklamalar soni"}, 
-                {"name": "hamkor_tashkilot_soni", "value": hamkor_tashkilot_soni, "color": "hamkor tashkilotlar soni"}, 
-                {"name": "reklamadan_tushadigan_umumiy_summa", "value": reklamadan_tushadigan_umumiy_summa, "color": "reklamadan tushadigan umumiy summa"}
+            "counts": [
+                {"name": "total_count", "value": total_count, "color": "Barcha bekatlardagi reklamalar soni"},
+                {"name": "hamkor_tashkilot_soni", "value": hamkor_tashkilot_soni, "color": "Reklamasi bor hamkor tashkilotlar soni"},
+                {"name": "reklamadan_tushadigan_umumiy_summa", "value": reklamadan_tushadigan_umumiy_summa, "color": "Reklamalar uchun to'langan umumiy summa "}
             ]
-            
         }, context={"request": request})
 
         return Response(serializer.data)
@@ -1175,7 +1189,7 @@ class AdvertisementStatisticsViewSet(viewsets.GenericViewSet):
             stations_data = []
             for station in Station.objects.filter(line=line):
                 station_ads = Advertisement.objects.filter(position__station=station)
-                total_ads += station_ads.count()  # jami reklama sonini qo'shamiz
+                total_ads += station_ads.count()
 
                 turi_stats = (
                     station_ads.values('Qurilma_turi__qurilmaturi')
@@ -1197,7 +1211,7 @@ class AdvertisementStatisticsViewSet(viewsets.GenericViewSet):
         buffer = BytesIO()
         doc = SimpleDocTemplate(
             buffer,
-            pagesize=landscape(A4),
+            pagesize=landscape(A3),
             rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20
         )
         elements = []
@@ -1210,21 +1224,25 @@ class AdvertisementStatisticsViewSet(viewsets.GenericViewSet):
         elements.append(Spacer(1, 12))
 
         # Table header
-        header_style = ParagraphStyle(name='header', textColor=colors.red, alignment=1, fontSize=10)
+        header_style = ParagraphStyle(name='header', textColor=colors.red, alignment=1, fontSize=12)
         all_turlari = set()
         for line in lines_data:
             for station in line["stations"]:
                 all_turlari.update(station["turlar"].keys())
         all_turlari = sorted(all_turlari)
-        
+
         header = [Paragraph("Liniya", header_style), Paragraph("Bekat", header_style)]
         for turi in all_turlari:
             header.append(Paragraph(turi, header_style))
         table_data = [header]
 
         # Data rows
-        line_station_style = ParagraphStyle(name='line_station', alignment=1, fontSize=9, textColor=colors.darkblue)
-        row_style = ParagraphStyle(name='row', alignment=1, fontSize=9, textColor=colors.black)
+        line_station_style = ParagraphStyle(name='line_station', alignment=1, fontSize=11, textColor=colors.darkblue)
+        row_style = ParagraphStyle(name='row', alignment=1, fontSize=11, textColor=colors.black)
+
+        # Turlar bo'yicha total
+        turi_totals = {turi: 0 for turi in all_turlari}
+        bekat_total = 0  # barcha bekatlar jami
 
         for line in lines_data:
             stations = line["stations"]
@@ -1233,13 +1251,26 @@ class AdvertisementStatisticsViewSet(viewsets.GenericViewSet):
                     Paragraph(line["line"] if idx == 0 else "", line_station_style),
                     Paragraph(station["name"], line_station_style)
                 ]
+                station_total = 0
                 for turi in all_turlari:
                     val = station["turlar"].get(turi, 0)
                     row.append(Paragraph(str(val) if val != 0 else "-", row_style))
+                    station_total += val
+                    turi_totals[turi] += val
+                bekat_total += station_total
                 table_data.append(row)
 
+        # --- Jadval oxiriga pastki row qo'shish ---
+        bottom_row = [
+            Paragraph("Jami", row_style),  # Liniya ustuni
+            Paragraph(str(bekat_total), row_style)  # Bekat ustuni jami
+        ]
+        for turi in all_turlari:
+            bottom_row.append(Paragraph(str(turi_totals[turi]), row_style))
+        table_data.append(bottom_row)
+
         # Column widths
-        page_width = landscape(A4)[0] - doc.leftMargin - doc.rightMargin
+        page_width = landscape(A3)[0] - doc.leftMargin - doc.rightMargin
         num_turlar = len(all_turlari)
         turlar_col_width = (page_width - 220) / num_turlar if num_turlar > 0 else 50
         col_widths = [100, 120] + [turlar_col_width]*num_turlar
@@ -1252,9 +1283,10 @@ class AdvertisementStatisticsViewSet(viewsets.GenericViewSet):
             ('ALIGN', (0,0), (-1,-1), 'CENTER'),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('TEXTCOLOR', (0,0), (-1,0), colors.red),
-            ('TEXTCOLOR', (0,1), (1,-1), colors.darkblue),
+            ('TEXTCOLOR', (0,1), (1,-2), colors.darkblue),
             ('BACKGROUND', (0,0), (-1,0), colors.lightyellow),
-            ('BACKGROUND', (0,1), (-1,-1), colors.whitesmoke),
+            ('BACKGROUND', (0,1), (-2,-2), colors.whitesmoke),
+            ('BACKGROUND', (0, len(table_data)-1), (-1, len(table_data)-1), colors.yellow),  # pastki jami row sariq
         ])
 
         # Merge line cells
@@ -1268,20 +1300,13 @@ class AdvertisementStatisticsViewSet(viewsets.GenericViewSet):
         table.setStyle(table_style)
         elements.append(table)
 
-        # --- Pastga jami reklamalar soni ---
-        total_paragraph = Paragraph(
-            f'<font color="red">Jami reklamalar soni:</font> <font color="darkblue">{total_ads}</font>',
-            ParagraphStyle(name='total', fontSize=10)
-        )
-        elements.append(Spacer(1, 12))
-        elements.append(total_paragraph)
-
         # Build PDF
         doc.build(elements)
         buffer.seek(0)
         response = HttpResponse(buffer, content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="metro_statistics.pdf"'
         return response
+
 
         
 
@@ -1363,7 +1388,7 @@ class IjarachiStatisticsViewSet(viewsets.GenericViewSet):
         styles = getSampleStyleSheet()
         title_style = styles["Title"]
         title_style.textColor = colors.darkblue
-        elements.append(Paragraph("Top 10 Ijarachilar Reklamalari Statistikasi", title_style))
+        elements.append(Paragraph("Top 10 ijarachilar reklamalari statistikasi", title_style))
         elements.append(Spacer(1, 20))
 
         # CHART
@@ -1576,14 +1601,14 @@ class IjarachiSumStatisticsViewSet(viewsets.GenericViewSet):
             return drawing
 
         # 1-bet: 1-yarim yil
-        elements.append(Paragraph(f"Top 10 Ijarachilar To'lov Statistikasi — {year}-yil (1-Yarim yil)", title_style))
+        elements.append(Paragraph(f"Top 10 ijarachilar to'lov statistikasi — {year}-yil (1-yarim yil)", title_style))
         elements.append(Spacer(1, 12))
         elements.append(create_chart(chart_data_h1, colors.lightblue))
         elements.append(Spacer(1, 20))
 
         # 2-bet: 2-yarim yil
         elements.append(PageBreak())
-        elements.append(Paragraph(f"Top 10 Ijarachilar To'lov Statistikasi — {year}-yil (2-Yarim yil)", title_style))
+        elements.append(Paragraph(f"Top 10 ijarachilar to'lov statistikasi — {year}-yil (2-yarim yil)", title_style))
         elements.append(Spacer(1, 12))
         elements.append(create_chart(chart_data_h2, colors.green))
         elements.append(Spacer(1, 20))
@@ -1591,7 +1616,7 @@ class IjarachiSumStatisticsViewSet(viewsets.GenericViewSet):
         # Jami summa pastda
         total_paragraph = Paragraph(
             f"<b>Jami to'lov summasi:</b> {total_sum_all:,.2f}",
-            ParagraphStyle(name='total', fontSize=12, textColor=colors.red)
+            ParagraphStyle(name='total', fontSize=12, textColor=colors.darkblue)
         )
         elements.append(total_paragraph)
 
@@ -1844,6 +1869,8 @@ class TarkibAdvertisementViewSet(viewsets.ModelViewSet):
     ordering_fields = ['Qurilma_narxi']
     filterset_fields = ['position', 'Ijarachi', 'position__harakat_tarkibi']
     serializer_class = TarkibAdvertisementSerializer
+    pagination_class = CustomPagination
+    
 
     # ---- SERIALIZERLARNI ACTIONGA KO‘RA TANLASH ----
     def get_serializer_class(self):
@@ -1948,7 +1975,11 @@ class TarkibAdvertisementArchiveViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
 
     # ---- search & filter ----
-    search_fields = ['Reklama_nomi', 'position__harakat_tarkibi__name']
+    search_fields = [
+        'Reklama_nomi',
+        'position__harakat_tarkibi__tarkib',
+        'position__harakat_tarkibi__depo__nomi'
+    ]
     ordering_fields = ['Qurilma_narxi']
     filterset_fields = ['position', 'tarkib', 'Ijarachi']  # harakat_tarkibi o‘rniga 'tarkib'
     pagination_class = CustomPagination
@@ -2183,3 +2214,800 @@ class TarkibAllAdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
         doc.build(elements)
         buffer.seek(0)
         return FileResponse(buffer, as_attachment=True, filename="tarkib_all_advertisements.pdf")
+    
+    
+    
+class TarkibStatisticsViewSet(viewsets.GenericViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        return self.all_statistics(request)
+
+    @action(detail=False, methods=["get"], url_path="all")
+    def all_statistics(self, request):
+        depos_data = []
+
+        for depo in Depo.objects.all():
+            harakatlar_data = []
+
+            for tarkib in HarakatTarkibi.objects.filter(depo=depo):
+                pozitsiyalar = TarkibPosition.objects.filter(harakat_tarkibi=tarkib)
+
+                pozitsiyalar_data = []
+                for pos in pozitsiyalar:
+                    ads = TarkibAdvertisement.objects.filter(position=pos)
+
+                    # Qurilma turlariga ko‘ra guruhlash
+                    turi_stats = (
+                        ads.values('Qurilma_turi__qurilmaturi')
+                        .annotate(count=Count('id'))
+                        .order_by('-count')
+                    )
+
+                    turi_detail = []
+                    for item in turi_stats:
+                        turi_nomi = item['Qurilma_turi__qurilmaturi'] or "Noma'lum"
+                        turi_ads = ads.filter(Qurilma_turi__qurilmaturi=turi_nomi)
+
+                        turi_detail.append({
+                            "turi": turi_nomi,
+                            "reklama_soni": item['count'],
+                            "reklamalar": TarkibAdvertisementSerializer(
+                                turi_ads, many=True, context={"request": request}
+                            ).data
+                        })
+
+                    pozitsiyalar_data.append({
+                        "pozitsiya": pos.position,
+                        "umumiy_reklama": ads.count(),
+                        "qurilma_turlari": turi_detail
+                    })
+
+                harakatlar_data.append({
+                    "tarkib": tarkib.tarkib,
+                    "pozitsiyalar": pozitsiyalar_data
+                })
+
+            depos_data.append({
+                "depo": depo.nomi,
+                "harakat_tarkiblari": harakatlar_data
+            })
+
+        return Response({
+            "umumiy_reklama_soni": TarkibAdvertisement.objects.count(),
+            "depolar": depos_data
+        })
+        
+        
+    @action(detail=False, methods=["get"], url_path="all-pdf")
+    def all_statistics_pdf(self, request):
+        lines_data = []
+        all_turlari = set()
+        total_ads = 0
+
+        # --- Data yig‘ish ---
+        for depo in Depo.objects.all():
+            depo_block = {"depo": depo.nomi, "tarkiblar": []}
+            for tarkib in HarakatTarkibi.objects.filter(depo=depo):
+                ads = TarkibAdvertisement.objects.filter(position__harakat_tarkibi=tarkib)
+                total_ads += ads.count()
+
+                turi_stats = ads.values('Qurilma_turi__qurilmaturi').annotate(count=Count('id'))
+                turlar_dict = {}
+                for item in turi_stats:
+                    turi = item.get("Qurilma_turi__qurilmaturi") or "Noma'lum"
+                    count = item.get("count", 0)
+                    turlar_dict[turi] = count
+                    all_turlari.add(turi)
+
+                depo_block["tarkiblar"].append({
+                    "tarkib": tarkib.tarkib,
+                    "turlar": turlar_dict
+                })
+            lines_data.append(depo_block)
+
+        if total_ads == 0:
+            return Response({"detail": "PDF yaratish uchun reklama ma'lumotlari mavjud emas"}, status=400)
+
+        # --- PDF yaratish ---
+        buffer = BytesIO()
+        left_margin = 70
+        right_margin = 70
+        doc = SimpleDocTemplate(
+            buffer, pagesize=landscape(A3),
+            rightMargin=right_margin, leftMargin=left_margin,
+            topMargin=20, bottomMargin=20
+        )
+
+        elements = []
+        styles = getSampleStyleSheet()
+
+        # Title
+        title_style = styles['Title']
+        title_style.textColor = colors.blue
+        elements.append(Paragraph("Harakat tarkiblaridagi umumiy reklama statistikasi", title_style))
+        elements.append(Spacer(1, 12))
+
+        # Table header
+        all_turlari = sorted(all_turlari)
+        header_style = ParagraphStyle(name='header', alignment=1, fontSize=10, textColor=colors.red)
+        row_style = ParagraphStyle(name='row', alignment=1, fontSize=10, textColor=colors.black)
+        depo_style = ParagraphStyle(name='depo', alignment=1, fontSize=10, textColor=colors.darkblue)
+
+        header = [Paragraph("Depo", header_style), Paragraph("Harakat tarkibi", header_style)]
+        for turi in all_turlari:
+            header.append(Paragraph(turi, header_style))
+        table_data = [header]
+
+        # Row data
+        turi_totals = {turi: 0 for turi in all_turlari}
+
+        for depo in lines_data:
+            tarkiblar = depo["tarkiblar"]
+            start_row = len(table_data)
+
+            for tarkib in tarkiblar:
+                row = [
+                    Paragraph(str(depo["depo"]), depo_style),
+                    Paragraph(str(tarkib["tarkib"]), depo_style)
+                ]
+                for turi in all_turlari:
+                    val = tarkib["turlar"].get(turi, 0)
+                    row.append(Paragraph(str(val) if val != 0 else "0", row_style))  # 0 chiqaramiz, "-" o'rniga
+                    turi_totals[turi] += val
+                table_data.append(row)
+
+            # Depo nomini vertical span qilish
+            end_row = len(table_data) - 1
+            if start_row < end_row:
+                pass
+
+        # Pastki jami row (gorizontal jami)
+        bottom_row = [Paragraph("Jami", row_style), Paragraph(str(total_ads), row_style)]
+        for turi in all_turlari:
+            bottom_row.append(Paragraph(str(turi_totals[turi]), row_style))
+        table_data.append(bottom_row)
+
+        # Column widths
+        page_width = landscape(A3)[0] - left_margin - right_margin
+        num_turlar = len(all_turlari)
+        turlar_col_width = max((page_width - 170) / max(num_turlar, 1), 20)
+        col_widths = [120, 150] + [turlar_col_width]*num_turlar
+
+        table = LongTable(table_data, colWidths=col_widths, repeatRows=1, splitByRow=1)
+
+        # Table style
+        table_style = TableStyle([
+            ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.red),
+            ('BACKGROUND', (0,0), (-1,0), colors.lightyellow),
+            ('BACKGROUND', (0,1), (-1,-2), colors.whitesmoke),
+            ('BACKGROUND', (0, len(table_data)-1), (-1, len(table_data)-1), colors.yellow),
+        ])
+
+        # Depo kataklarini vertical birlashtirish
+        current_row = 1
+        for depo in lines_data:
+            n_tarkib = len(depo["tarkiblar"])
+            if n_tarkib > 1:
+                table_style.add('SPAN', (0, current_row), (0, current_row + n_tarkib - 1))
+            current_row += n_tarkib
+
+        table.setStyle(table_style)
+        elements.append(table)
+
+        doc.build(elements)
+
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="tarkib_statistics.pdf"'
+        return response
+
+
+
+
+
+
+
+
+
+
+
+class IjarachiTarkibStatisticsViewSet(viewsets.GenericViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        return self.all_statistics(request)
+
+    @action(detail=False, methods=["get"], url_path="all")
+    def all_statistics(self, request):
+        tenants_data = []
+
+        for tenant in Ijarachi.objects.all():
+
+            tenant_ads = TarkibAdvertisement.objects.filter(Ijarachi=tenant)
+
+            tarkiblar_data = []
+
+            # Tarkibni ijarachi orqali topish
+            for tarkib in HarakatTarkibi.objects.filter(
+                tarkib_positions__tarkib_advertisement__Ijarachi=tenant
+            ).distinct():
+
+                # ❗ Tarkibga tegishli pozitsiyalarni olish
+                tarkib_positions = TarkibPosition.objects.filter(harakat_tarkibi=tarkib)
+
+                # ❗ Endi reklamalarni shu pozitsiyalar orqali filter qilamiz
+                tarkib_ads = tenant_ads.filter(position__in=tarkib_positions)
+
+                tarkiblar_data.append({
+                    "tarkib": tarkib.tarkib,
+                    "reklama_soni": tarkib_ads.count(),
+                    "reklamalar": TarkibAdvertisementSerializer(
+                        tarkib_ads, many=True, context={"request": request}
+                    ).data
+                })
+
+            tenants_data.append({
+                "ijarachi": tenant.name,
+                "umumiy_reklama_soni": tenant_ads.count(),
+                "tarkiblar": tarkiblar_data
+            })
+
+        return Response({
+            "umumiy_ijarachi_soni": Ijarachi.objects.count(),
+            "ijarachilar": tenants_data
+        })
+
+
+        
+        
+    @action(detail=False, methods=["get"], url_path="all-pdf")
+    def all_statistics_pdf(self, request):
+        # 10 ta eng ko'p reklama berilgan ijarachilar
+        top_tenants = (
+            Ijarachi.objects.annotate(
+                reklama_count=Count('tarkibadvertisement')
+            ).order_by('-reklama_count')[:10]
+        )
+
+        if not top_tenants.exists():
+            return Response(
+                {"detail": "PDF yaratish uchun ijarachi ma'lumotlari mavjud emas"},
+                status=400
+            )
+
+        tenant_names = [t.name for t in top_tenants]
+        tenant_counts = [TarkibAdvertisement.objects.filter(Ijarachi=t).count() for t in top_tenants]
+
+        max_value = max(tenant_counts)
+        step_value = max(1, int(max_value / 7))
+
+        # PDF yaratish
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=landscape(A4),
+            rightMargin=20,
+            leftMargin=20,
+            topMargin=20,
+            bottomMargin=20
+        )
+        elements = []
+
+        # TITLE (dark blue)
+        styles = getSampleStyleSheet()
+        title_style = styles["Title"]
+        title_style.textColor = colors.darkblue
+        elements.append(Paragraph("Harakat tarkiblari uchun top 10 ijarachilar reklamalari statistikasi", title_style))
+        elements.append(Spacer(1, 20))
+
+        # CHART
+        drawing = Drawing(700, 400)
+        chart = HorizontalBarChart()
+        chart.x = 120
+        chart.y = 50
+        chart.height = 300
+        chart.width = 500
+        chart.data = [tenant_counts]
+
+        chart.barWidth = 22
+        chart.groupSpacing = 12
+        chart.barSpacing = 5
+
+        # Shkala
+        chart.valueAxis.valueMin = 0
+        chart.valueAxis.valueMax = max_value + step_value
+        chart.valueAxis.valueStep = step_value
+
+        # Ijarachi nomlari
+        chart.categoryAxis.categoryNames = tenant_names
+        chart.categoryAxis.labels.fillColor = colors.darkblue
+        chart.categoryAxis.labels.boxAnchor = 'e'
+
+        # Bar rangi
+        chart.bars[0].fillColor = colors.lightgreen
+
+        # Bar ustiga qiymat yozish
+        for index, value in enumerate(tenant_counts):
+            bar_length = value * (chart.width / (max_value + step_value))
+            y_center = chart.y + index * (chart.barWidth + chart.groupSpacing) + (chart.barWidth / 2)
+
+            if value > 0:
+                value_str = f"{value:>4}"
+                x_pos = chart.x + bar_length + 12
+                drawing.add(
+                    String(
+                        x_pos,
+                        y_center - 4,
+                        value_str,
+                        fontName='Helvetica-Bold',
+                        fontSize=12,
+                        fillColor=colors.black,
+                        textAnchor="start"
+                    )
+                )
+
+        drawing.add(chart)
+        elements.append(drawing)
+
+        # PDF yaratish
+        doc.build(elements)
+        buffer.seek(0)
+
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="top_10_ijarachi_statistics.pdf"'
+        return response
+
+
+
+class IjarachiTarkibSumStatisticsViewSet(viewsets.GenericViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        return self.all_statistics(request)
+
+    @action(detail=False, methods=["get"], url_path="all")
+    def all_statistics(self, request):
+        tenants_data = []
+
+        for tenant in Ijarachi.objects.all():
+            # Ijarachi tegishli reklamalar
+            tenant_ads = TarkibAdvertisement.objects.filter(Ijarachi=tenant)
+
+            # Ijarachi jami summa
+            total_sum = TarkibShartnomaSummasi.objects.filter(
+                reklama__in=tenant_ads
+            ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+            tarkiblar_data = []
+
+            # Harakat tarkibi bo‘yicha reklama
+            for tarkib in HarakatTarkibi.objects.filter(
+                tarkib_positions__tarkib_advertisement__Ijarachi=tenant
+            ).distinct():
+
+                tarkib_ads = tenant_ads.filter(position__harakat_tarkibi=tarkib)
+
+                # Tarkib bo‘yicha summa
+                tarkib_sum = TarkibShartnomaSummasi.objects.filter(
+                    reklama__in=tarkib_ads
+                ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+                reklama_sums = []
+                for ad in tarkib_ads:
+                    ad_sum = ad.tarkibtolovlar.aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+                    reklama_sums.append({"reklama": ad.Reklama_nomi, "summa": ad_sum})
+
+                tarkiblar_data.append({
+                    "tarkib": tarkib.tarkib,
+                    "umumiy_summa": tarkib_sum,
+                    "reklamalar": reklama_sums
+                })
+
+            tenants_data.append({
+                "ijarachi": tenant.name,
+                "jami_summa": total_sum,
+                "tarkiblar": tarkiblar_data
+            })
+
+        return Response({
+            "umumiy_ijarachi_soni": Ijarachi.objects.count(),
+            "ijarachilar": tenants_data
+        })
+
+    @action(detail=False, methods=["get"], url_path="pdf")
+    def all_statistics_pdf(self, request):
+        year = datetime.now().year
+
+        # TOP 10 ijarachi jami summa bo‘yicha
+        tenants = Ijarachi.objects.annotate(
+            total_sum=Sum('tarkibadvertisement__tarkibtolovlar__Shartnomasummasi')
+        ).order_by('-total_sum')[:10]
+
+        if not tenants.exists():
+            return Response({"detail": "PDF yaratish uchun ma'lumotlar mavjud emas"}, status=400)
+
+        tenant_names = [t.name for t in tenants]
+        chart_data_h1 = []
+        chart_data_h2 = []
+        total_sum_all = Decimal(0)
+
+        # 1-yarim yil: Jan 1 - Jun 30, 2-yarim yil: Jul 1 - Dec 31
+        h1_start, h1_end = datetime(year, 1, 1), datetime(year, 6, 30, 23, 59, 59)
+        h2_start, h2_end = datetime(year, 7, 1), datetime(year, 12, 31, 23, 59, 59)
+
+        for tenant in tenants:
+            sum_h1 = TarkibShartnomaSummasi.objects.filter(
+                reklama__Ijarachi=tenant,  # <-- reklama orqali bog‘lanish
+                created_at__range=(h1_start, h1_end)
+            ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+            sum_h2 = TarkibShartnomaSummasi.objects.filter(
+                reklama__Ijarachi=tenant,
+                created_at__range=(h2_start, h2_end)
+            ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+
+
+            chart_data_h1.append(float(sum_h1))
+            chart_data_h2.append(float(sum_h2))
+            total_sum_all += sum_h1 + sum_h2
+
+        # PDF yaratish
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(A4),
+                                rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
+        elements = []
+        styles = getSampleStyleSheet()
+        title_style = styles['Title']
+        title_style.textColor = colors.darkblue
+
+        def create_chart(data, color):
+            drawing = Drawing(700, 400)
+            chart = HorizontalBarChart()
+            chart.x = 200  # <-- barlar va nomlar orasidagi bo'sh joyni oshirdik
+            chart.y = 50
+            chart.height = 300
+            chart.width = 500
+            chart.data = [data]
+            chart.barWidth = 22
+            chart.groupSpacing = 12
+            chart.barSpacing = 5
+
+            chart.categoryAxis.categoryNames = tenant_names
+            chart.categoryAxis.labels.fillColor = colors.darkblue
+            chart.categoryAxis.labels.boxAnchor = 'e'
+            chart.categoryAxis.labels.dx = -10  # nomlarni o'ngroqqa siljitish
+
+            # Y-o'q maksimal qiymatni katta summaga moslash
+            max_val = max(data) if data else 0
+            max_val = max(max_val, 1)  # 0 bo‘lsa 1 ga o‘zgartiramiz
+            step_value = max(1, int(max_val / 7))
+
+            chart.valueAxis.valueMin = 0
+            chart.valueAxis.valueMax = max_val * 1.05  # 5% bo'sh joy
+            chart.valueAxis.valueStep = step_value
+
+            # Bar ustida qiymat hisoblash
+            for i, val in enumerate(data):
+                # Bo'linishdan oldin valueMax > 0 ekanligini tekshiramiz
+                value_max_for_div = chart.valueAxis.valueMax if chart.valueAxis.valueMax > 0 else 1
+                bar_length = val * (chart.width / value_max_for_div)
+                y_center = chart.y + i * (chart.barWidth + chart.groupSpacing) + (chart.barWidth / 2)
+                if val > 0:
+                    drawing.add(String(
+                        chart.x + bar_length + 10,
+                        y_center - 4,
+                        f"{val:,.0f}",
+                        fontName='Helvetica-Bold',
+                        fontSize=10,
+                        fillColor=colors.black,
+                        textAnchor="start"
+                    ))
+
+            drawing.add(chart)
+            return drawing
+
+
+        # 1-bet: 1-yarim yil
+        elements.append(Paragraph(f"Harakat tarkiblari reklamalari uchun top 10 ijarachi — 1-yarim yil ({year})", title_style))
+        elements.append(Spacer(1, 12))
+        elements.append(create_chart(chart_data_h1, colors.lightblue))
+        elements.append(Spacer(1, 20))
+
+        # 2-bet: 2-yarim yil
+        elements.append(PageBreak())
+        elements.append(Paragraph(f"Harakat tarkiblari reklamalari uchun top 10 ijarachi — 2-yarim yil ({year})", title_style))
+        elements.append(Spacer(1, 12))
+        elements.append(create_chart(chart_data_h2, colors.green))
+        elements.append(Spacer(1, 20))
+
+        # Jami summa pastda
+        total_paragraph = Paragraph(
+            f"<b>Jami to'lov summasi:</b> {total_sum_all:,.2f}",
+            ParagraphStyle(name='total', fontSize=12, textColor=colors.blue)
+        )
+        elements.append(total_paragraph)
+
+        # PDF build
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="top10_ijarachi_sum_halfyear_{year}.pdf"'
+        return response
+
+
+
+
+class IjarachiUnifiedStatisticsViewSet(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(query_serializer=IjarachiUnifiedStatisticsQuerySerializer)
+    def get(self, request):
+        serializer = IjarachiUnifiedStatisticsQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        stat_type = serializer.validated_data['type']
+        pdf = serializer.validated_data.get('pdf', False)
+
+        if pdf:
+            return self.generate_pdf(stat_type)
+
+        if stat_type == "train":
+            return self.train_statistics()
+        return self.station_statistics()
+
+
+    # -------------------------
+    # Train statistikasi
+    # -------------------------
+    def train_statistics(self):
+        tenants_data = []
+        for tenant in Ijarachi.objects.all():
+            tenant_ads = TarkibAdvertisement.objects.filter(Ijarachi=tenant)
+            total_sum = TarkibShartnomaSummasi.objects.filter(
+                reklama__in=tenant_ads
+            ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+            tarkiblar = []
+            for tarkib in HarakatTarkibi.objects.filter(
+                tarkib_positions__tarkib_advertisement__Ijarachi=tenant
+            ).distinct():
+                tarkib_ads = tenant_ads.filter(position__harakat_tarkibi=tarkib)
+                tarkib_sum = TarkibShartnomaSummasi.objects.filter(
+                    reklama__in=tarkib_ads
+                ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+                ads = []
+                for ad in tarkib_ads:
+                    ad_sum = ad.tarkibtolovlar.aggregate(
+                        total=Sum('Shartnomasummasi')
+                    )['total'] or 0
+                    ads.append({
+                        "reklama": ad.Reklama_nomi,
+                        "summa": ad_sum
+                    })
+
+                tarkiblar.append({
+                    "tarkib": tarkib.tarkib,
+                    "umumiy_summa": tarkib_sum,
+                    "reklamalar": ads
+                })
+
+            tenants_data.append({
+                "ijarachi": tenant.name,
+                "logo": self.request.build_absolute_uri(tenant.logo.url) if tenant.logo else None,
+                "jami_summa": total_sum,
+                "tarkiblar": tarkiblar
+            })
+
+        return Response({
+            "type": "train",
+            "umumiy_ijarachi_soni": Ijarachi.objects.count(),
+            "ijarachilar": tenants_data
+        })
+
+
+    def station_statistics(self):
+        tenants_data = []
+        for tenant in Ijarachi.objects.all():
+            tenant_ads = Advertisement.objects.filter(Ijarachi=tenant)
+            total_sum = ShartnomaSummasi.objects.filter(
+                advertisement__in=tenant_ads
+            ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+            stations_data = []
+            for station in Station.objects.filter(
+                positions__advertisement__Ijarachi=tenant
+            ).distinct():
+                station_ads = tenant_ads.filter(position__station=station)
+                station_sum = ShartnomaSummasi.objects.filter(
+                    advertisement__in=station_ads
+                ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+                ads_data = []
+                for ad in station_ads:
+                    ad_sum = ad.tolovlar.aggregate(
+                        total=Sum('Shartnomasummasi')
+                    )['total'] or 0
+                    ads_data.append({
+                        "reklama": ad.Reklama_nomi,
+                        "summa": ad_sum
+                    })
+
+                stations_data.append({
+                    "bekat": station.name,
+                    "umumiy_summa": station_sum,
+                    "reklamalar": ads_data
+                })
+
+            tenants_data.append({
+                "ijarachi": tenant.name,
+                "logo": self.request.build_absolute_uri(tenant.logo.url) if tenant.logo else None,
+                "jami_summa": total_sum,
+                "bekatlar": stations_data
+            })
+
+        return Response({
+            "type": "station",
+            "umumiy_ijarachi_soni": Ijarachi.objects.count(),
+            "ijarachilar": tenants_data
+        })
+
+    # -------------------------
+    # PDF generator
+    # -------------------------
+    def generate_pdf(self, stat_type):
+        year = datetime.now().year
+        tenants_data = []
+
+        if stat_type == "train":
+            tenants = Ijarachi.objects.annotate(
+                total_sum=Sum('tarkibadvertisement__tarkibtolovlar__Shartnomasummasi')
+            ).order_by('-total_sum')[:10]
+
+            if not tenants.exists():
+                return Response({"detail": "PDF yaratish uchun ma'lumotlar mavjud emas"}, status=400)
+
+            tenant_names = [t.name for t in tenants]
+            chart_data_h1, chart_data_h2 = [], []
+            total_sum_all = Decimal(0)
+
+            h1_start, h1_end = datetime(year, 1, 1), datetime(year, 6, 30, 23, 59, 59)
+            h2_start, h2_end = datetime(year, 7, 1), datetime(year, 12, 31, 23, 59, 59)
+
+            for tenant in tenants:
+                sum_h1 = TarkibShartnomaSummasi.objects.filter(
+                    reklama__Ijarachi=tenant,
+                    created_at__range=(h1_start, h1_end)
+                ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+                sum_h2 = TarkibShartnomaSummasi.objects.filter(
+                    reklama__Ijarachi=tenant,
+                    created_at__range=(h2_start, h2_end)
+                ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+                chart_data_h1.append(float(sum_h1))
+                chart_data_h2.append(float(sum_h2))
+                total_sum_all += sum_h1 + sum_h2
+
+            # PDF yaratish uchun chart funksiya va sahifalar
+            return self._create_pdf(chart_data_h1, chart_data_h2, tenant_names, total_sum_all, stat_type, year)
+
+        elif stat_type == "station":
+            tenants = Ijarachi.objects.annotate(
+                total_sum=Sum('advertisement__tolovlar__Shartnomasummasi')
+            ).order_by('-total_sum')[:10]
+
+            if not tenants.exists():
+                return Response({"detail": "PDF yaratish uchun ma'lumotlar mavjud emas"}, status=400)
+
+            tenant_names = [t.name for t in tenants]
+            chart_data_h1, chart_data_h2 = [], []
+            total_sum_all = Decimal(0)
+
+            h1_start, h1_end = datetime(year, 1, 1), datetime(year, 6, 30, 23, 59, 59)
+            h2_start, h2_end = datetime(year, 7, 1), datetime(year, 12, 31, 23, 59, 59)
+
+            for tenant in tenants:
+                sum_h1 = ShartnomaSummasi.objects.filter(
+                    advertisement__Ijarachi=tenant,
+                    created_at__range=(h1_start, h1_end)
+                ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+                sum_h2 = ShartnomaSummasi.objects.filter(
+                    advertisement__Ijarachi=tenant,
+                    created_at__range=(h2_start, h2_end)
+                ).aggregate(total=Sum('Shartnomasummasi'))['total'] or 0
+
+                chart_data_h1.append(float(sum_h1))
+                chart_data_h2.append(float(sum_h2))
+                total_sum_all += sum_h1 + sum_h2
+
+            return self._create_pdf(chart_data_h1, chart_data_h2, tenant_names, total_sum_all, stat_type, year)
+
+    # -------------------------
+    # PDF yaratish helper
+    # -------------------------
+    def _create_pdf(self, chart_data_h1, chart_data_h2, tenant_names, total_sum_all, stat_type, year):
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(A4),
+                                rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
+        elements = []
+        styles = getSampleStyleSheet()
+        title_style = styles['Title']
+        title_style.textColor = colors.darkblue
+
+        def create_chart(data, color):
+            drawing = Drawing(700, 400)
+            chart = HorizontalBarChart()
+            chart.x = 200
+            chart.y = 50
+            chart.height = 300
+            chart.width = 500
+            chart.data = [data]
+            chart.barWidth = 22
+            chart.groupSpacing = 12
+            chart.barSpacing = 5
+            chart.categoryAxis.categoryNames = tenant_names
+            chart.categoryAxis.labels.fillColor = colors.darkblue
+            chart.categoryAxis.labels.boxAnchor = 'e'
+            chart.categoryAxis.labels.dx = -10
+
+            max_val = max(data) if data else 0
+            max_val = max(max_val, 1)
+            step_value = max(1, int(max_val / 7))
+            chart.valueAxis.valueMin = 0
+            chart.valueAxis.valueMax = max_val * 1.05
+            chart.valueAxis.valueStep = step_value
+
+            for i, val in enumerate(data):
+                value_max_for_div = chart.valueAxis.valueMax if chart.valueAxis.valueMax > 0 else 1
+                bar_length = val * (chart.width / value_max_for_div)
+                y_center = chart.y + i * (chart.barWidth + chart.groupSpacing) + (chart.barWidth / 2)
+                if val > 0:
+                    drawing.add(String(
+                        chart.x + bar_length + 10,
+                        y_center - 4,
+                        f"{val:,.0f}",
+                        fontName='Helvetica-Bold',
+                        fontSize=10,
+                        fillColor=colors.black,
+                        textAnchor="start"
+                    ))
+            drawing.add(chart)
+            return drawing
+
+        # 1-bet
+        elements.append(Paragraph(f"Top 10 ijarachilar to'lov statistikasi — {year} ({stat_type}) 1-yarim yil", title_style))
+        elements.append(Spacer(1, 12))
+        elements.append(create_chart(chart_data_h1, colors.lightblue))
+        elements.append(Spacer(1, 20))
+
+        # 2-bet
+        elements.append(PageBreak())
+        elements.append(Paragraph(f"Top 10 ijarachilar to'lov statistikasi — {year} ({stat_type}) 2-yarim yil", title_style))
+        elements.append(Spacer(1, 12))
+        elements.append(create_chart(chart_data_h2, colors.green))
+        elements.append(Spacer(1, 20))
+
+        # Jami summa pastda
+        total_paragraph = Paragraph(
+            f"<b>Jami to'lov summasi:</b> {total_sum_all:,.2f}",
+            ParagraphStyle(name='total', fontSize=12, textColor=colors.blue)
+        )
+        elements.append(total_paragraph)
+
+        # PDF build
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="top10_ijarachi_{stat_type}_{year}.pdf"'
+        return response
+
+
+
+
+

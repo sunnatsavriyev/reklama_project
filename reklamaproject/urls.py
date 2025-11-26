@@ -2,7 +2,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (MetroLineViewSet, StationViewSet, PositionViewSet, AdvertisementViewSet, AdvertisementArchiveViewSet, Last10AdvertisementImagesView, 
         get_me, ExpiredAdvertisementViewSet, Stationimage, AllAdvertisementsViewSet, CheckAuthView, IjarachiViewSet,TuriViewSet,ShartnomaSummasiViewSet,
         AdvertisementStatisticsView,StatisticsCountAPI, AdvertisementStatisticsViewSet, IjarachiStatisticsViewSet, IjarachiSumStatisticsViewSet,TarkibAdvertisementArchiveViewSet,
-    TarkibExpiredAdvertisementViewSet,DepoViewSet,TarkibAdvertisementViewSet,TarkibPositionViewSet,TarkibAllAdvertisementViewSet,TarkibViewSet,TarkibShardnomaSummasiViewSet
+    TarkibExpiredAdvertisementViewSet,DepoViewSet,TarkibAdvertisementViewSet,TarkibPositionViewSet,TarkibAllAdvertisementViewSet,TarkibViewSet,TarkibShardnomaSummasiViewSet,
+    TarkibStatisticsViewSet,IjarachiTarkibStatisticsViewSet, IjarachiTarkibSumStatisticsViewSet, IjarachiUnifiedStatisticsViewSet,
 )
 from django.urls import path
 router = DefaultRouter()
@@ -27,7 +28,10 @@ router.register(r'ijarachilar/statistics', IjarachiStatisticsViewSet, basename='
 router.register(r'ijarachilar/sum-statistics', IjarachiSumStatisticsViewSet, basename='ijarachi-sum-statistics')
 router.register(r'tarkib-advertisement-tugashi', TarkibExpiredAdvertisementViewSet, basename='tarkib-advertisement-tugashi')
 router.register(r'all-tarkib-advertisements', TarkibAllAdvertisementViewSet, basename='all-tarkib-advertisements')
-
+router.register(r'tarkib-advertisement-statistics', TarkibStatisticsViewSet, basename='tarkib-advertisement-statistics')
+router.register(r'ijarachi-tarkib-statistics', IjarachiTarkibStatisticsViewSet, basename='ijarachi-tarkib-statistics')
+router.register(r'ijarachi-tarkib-sum-statistics', IjarachiTarkibSumStatisticsViewSet, basename='ijarachi-tarkib-sum-statistics')
+# router.register(r'ijarachi-unified-statistics', IjarachiUnifiedStatisticsViewSet, basename='ijarachi-unified-statistics')
 
 urlpatterns =  [
     path("advertisements/statistics/", AdvertisementStatisticsView.as_view(), name="advertisement-statistics"),
@@ -36,6 +40,14 @@ urlpatterns =  [
     path('auth/check/', CheckAuthView.as_view(), name='check-auth'),
     path("advertisements/last-10-images/", Last10AdvertisementImagesView.as_view(), name="last-10-advertisements-images"),
     path("count/", StatisticsCountAPI.as_view(), name="statistics-count"),
+    path(
+    "ijarachilar/unified-statistics/",
+    IjarachiUnifiedStatisticsViewSet.as_view(),
+    name="ijarachi-unified-statistics"
+),
+    
+
+
     # path("stations/<int:pk>/search-number/", StationSearchAllNumbers.as_view(), name="station-search-number"),
 
 ]+router.urls 

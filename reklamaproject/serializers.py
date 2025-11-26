@@ -437,6 +437,14 @@ class TarkibAdvertisementSerializer(serializers.ModelSerializer):
     position_number = serializers.IntegerField(source='position.number', read_only=True)
     created_by = serializers.CharField(source="user.username", read_only=True) 
     photo = serializers.ImageField(use_url=True)
+    tarkib_nomi = serializers.CharField(
+        source='position.harakat_tarkibi.tarkib',
+        read_only=True
+    )
+    depo_nomi = serializers.CharField(
+        source='position.harakat_tarkibi.depo.nomi',
+        read_only=True
+    )
     position = serializers.PrimaryKeyRelatedField(queryset=TarkibPosition.objects.all())
     Ijarachi = serializers.PrimaryKeyRelatedField(
         queryset=Ijarachi.objects.all(),
@@ -459,7 +467,8 @@ class TarkibAdvertisementSerializer(serializers.ModelSerializer):
         model = TarkibAdvertisement
         fields = [
             'id', 'user', 'position', 'station', 'position_number',
-            'Reklama_nomi', 'Qurilma_turi',
+            'Reklama_nomi', 'Qurilma_turi','tarkib_nomi',
+            'depo_nomi',
             'Ijarachi', 'ijarachi', 'ijarachi_contact', 'ijarachi_name', 'ijarachi_logo',
             'Shartnoma_raqami', 'Shartnoma_muddati_boshlanishi', 'Shartnoma_tugashi',
             'O_lchov_birligi', 'Qurilma_narxi', 'Egallagan_maydon', 'Shartnoma_summasi',
@@ -675,6 +684,13 @@ class TarkibAdvertisementArchiveSerializer(serializers.ModelSerializer):
     user = serializers.CharField(source='user.username', read_only=True)
     Ijarachi = serializers.SlugRelatedField(slug_field='name', queryset=Ijarachi.objects.all())
     position_number = serializers.SerializerMethodField()
+    tarkib_nomi = serializers.CharField(
+        source='position.harakat_tarkibi.tarkib',
+        read_only=True
+    )
+    depo_nomi = serializers.CharField(
+        source='position.harakat_tarkibi.depo.nomi',
+        read_only=True)
     tolovlar = TarkibAdvertisementArchiveShartnomaSummasiSerializer(source='tarkibtolovlar', many=True, read_only=True)
     jami_tolov = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
     ijarachi = IjarachiSerializers(source='Ijarachi', read_only=True)
@@ -696,5 +712,20 @@ class TarkibAdvertisementArchiveSerializer(serializers.ModelSerializer):
         return obj.position.position if obj.position else None
 
 
+class IjarachiUnifiedStatisticsQuerySerializer(serializers.Serializer):
+    TYPE_CHOICES = (
+        ('train', 'Train'),
+        ('station', 'Station'),
+    )
+    type = serializers.ChoiceField(
+        choices=TYPE_CHOICES,
+        required=True,
+        help_text="Statistika turi: 'train' (Tarkib) yoki 'station' (Station)"
+    )
+    pdf = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Agar True bo'lsa PDF hosil qilinadi"
+    ) 
         
-        
+
