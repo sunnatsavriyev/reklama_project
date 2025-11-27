@@ -3,7 +3,7 @@ from .views import (MetroLineViewSet, StationViewSet, PositionViewSet, Advertise
         get_me, ExpiredAdvertisementViewSet, Stationimage, AllAdvertisementsViewSet, CheckAuthView, IjarachiViewSet,TuriViewSet,ShartnomaSummasiViewSet,
         AdvertisementStatisticsView,StatisticsCountAPI, AdvertisementStatisticsViewSet, IjarachiStatisticsViewSet, IjarachiSumStatisticsViewSet,TarkibAdvertisementArchiveViewSet,
     TarkibExpiredAdvertisementViewSet,DepoViewSet,TarkibAdvertisementViewSet,TarkibPositionViewSet,TarkibAllAdvertisementViewSet,TarkibViewSet,TarkibShardnomaSummasiViewSet,
-    TarkibStatisticsViewSet,IjarachiTarkibStatisticsViewSet, IjarachiTarkibSumStatisticsViewSet, IjarachiUnifiedStatisticsViewSet,
+    TarkibStatisticsViewSet,IjarachiTarkibStatisticsViewSet, IjarachiTarkibSumStatisticsViewSet, IjarachiUnifiedStatisticsViewSet,AllPaymentsHistoryView
 )
 from django.urls import path
 router = DefaultRouter()
@@ -45,6 +45,7 @@ urlpatterns =  [
     IjarachiUnifiedStatisticsViewSet.as_view(),
     name="ijarachi-unified-statistics"
 ),
+    path("payments-history/", AllPaymentsHistoryView.as_view(), name="all-payments-history"),
     
 
 

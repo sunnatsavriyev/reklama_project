@@ -3011,3 +3011,46 @@ class IjarachiUnifiedStatisticsViewSet(APIView):
 
 
 
+class AllPaymentsHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        result = []
+
+        # -----------------------------------------
+        # 1) Station Advertisement payments
+        # -----------------------------------------
+        for pay in ShartnomaSummasi.objects.select_related("advertisement"):
+            if pay.advertisement:
+                result.append({
+                    "type": "station",
+                    "reklama": pay.advertisement.Reklama_nomi,
+                    "ijarachi": pay.advertisement.Ijarachi.name if pay.advertisement.Ijarachi else None,
+                    "summa": float(pay.Shartnomasummasi),
+                    "comment": pay.comment,
+                    "date": pay.created_at,
+                })
+
+
+        # -----------------------------------------
+        # 3) Tarkib (train) Advertisement payments
+        # -----------------------------------------
+        for pay in TarkibShartnomaSummasi.objects.select_related("reklama"):
+            if pay.reklama:
+                result.append({
+                    "type": "train",
+                    "reklama": pay.reklama.Reklama_nomi,
+                    "ijarachi": pay.reklama.Ijarachi.name if pay.reklama.Ijarachi else None,
+                    "summa": float(pay.Shartnomasummasi),
+                    "comment": pay.comment,
+                    "date": pay.created_at,
+                })
+
+        # Hammasini sana bo‘yicha tartiblash
+        result = sorted(result, key=lambda x: x["date"], reverse=True)
+
+        return Response({
+            "total_records": len(result),
+            "total_sum": sum(item["summa"] for item in result),
+            "payments": result
+        })
